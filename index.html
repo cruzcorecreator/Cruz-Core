@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cruz Core</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #d9e0d6;
+      --border: #737373;
+      --blue: #29a8ff;
+      --green-1: #b3e20d;
+      --green-2: #73b768;
+      --green-3: #4f9323;
+      --black: #000000;
+      --white: #ffffff;
+      --brown: #a57b3a;
+      --light: #f3f3f3;
+      --overlay: rgba(0, 0, 0, 0.62);
+      --red: #ff3d35;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      font-family: Georgia, "Times New Roman", serif;
+      min-height: 100vh;
+      color: #000;
+      overflow-x: hidden;
+    }
+
+    .page {
+      width: 100%;
+      min-height: 100vh;
+      padding: 8px 18px 28px;
+      position: relative;
+    }
+
+    .topbar {
+      position: relative;
+      min-height: 150px;
+      margin-bottom: 18px;
+    }
+
+    .byline {
+      position: absolute;
+      top: -2px;
+      left: -12px;
+      margin: 0;
+      font-size: 2.55rem;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    .title {
+      margin: 52px 0 0;
+      text-align: center;
+      font-size: 5.4rem;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: -0.05em;
+    }
+
+    .learn-more {
+      position: absolute;
+      top: 6px;
+      right: -4px;
+      width: 260px;
+      height: 104px;
+      border-radius: 30px;
+      border: 7px solid var(--border);
+      background: var(--blue);
+      color: #000;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.16s ease, filter 0.16s ease;
+    }
+
+    .learn-more span {
+      font-size: 1.75rem;
+      line-height: 1;
+      font-weight: 800;
+    }
+
+    .learn-more:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.03);
+    }
+
+    .games-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 28px 34px;
+      align-items: start;
+    }
+
+    .game-card {
+      width: 100%;
+      min-height: 212px;
+      border-radius: 40px;
+      border: 7px solid var(--border);
+      text-decoration: none;
+      color: #000;
+      display: flex;
+      align-items: center;
+      padding: 0 26px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+
+    .game-card:hover {
+      transform: scale(1.015);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.18);
+      filter: brightness(1.01);
+    }
+
+    .game-card .thumb {
+      width: 195px;
+      height: 170px;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-card .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .game-card .label {
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 800;
+      font-size: 2.1rem;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      text-transform: lowercase;
+      word-break: break-word;
+    }
+
+    .duckmath {
+      background: var(--green-1);
+    }
+
+    .duckmath .thumb::before {
+      content: "";
+      position: absolute;
+      width: 108px;
+      height: 88px;
+      border-radius: 999px;
+      background: rgba(219, 243, 83, 0.7);
+      left: 18px;
+      bottom: 12px;
+    }
+
+    .worldle {
+      background: var(--green-2);
+    }
+
+    .worldle .thumb .worldle-w {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8.4rem;
+      line-height: 1;
+      font-weight: 700;
+      color: #efefef;
+      letter-spacing: -0.08em;
+      transform: translateY(-6px);
+    }
+
+    .minecraft {
+      background: var(--green-3);
+    }
+
+    .minecraft .thumb img {
+      object-fit: cover;
+    }
+
+    .plinko {
+      background: #000;
+      color: var(--white);
+    }
+
+    .plinko .thumb {
+      width: 210px;
+    }
+
+    .plinko .thumb .plinko-word {
+      font-family: "Brush Script MT", "Segoe Script", cursive;
+      color: #fff;
+      font-size: 5.25rem;
+      line-height: 1;
+      font-weight: 600;
+      transform: rotate(-2deg);
+      white-space: nowrap;
+    }
+
+    .plinko .label,
+    .fnaf .label {
+      color: #6d666d;
+    }
+
+    .snowrider {
+      background: var(--brown);
+    }
+
+    .snowrider .thumb img {
+      object-fit: contain;
+      transform: scale(1.1);
+    }
+
+    .renweb {
+      background: var(--light);
+    }
+
+    .renweb .thumb img {
+      object-fit: contain;
+      transform: scale(0.95);
+    }
+
+    .fnaf {
+      background: #000;
+      color: #fff;
+      grid-column: 1 / 2;
+    }
+
+    .fnaf .thumb {
+      width: 200px;
+    }
+
+    .fnaf .thumb img {
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 50;
+    }
+
+    .overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      width: min(720px, 92vw);
+      background: #41abf3;
+      border: 7px solid var(--border);
+      border-radius: 42px;
+      padding: 28px 22px 18px;
+      position: relative;
+      box-shadow: 0 28px 60px rgba(0,0,0,0.28);
+    }
+
+    .modal h2 {
+      margin: 0 110px 12px 0;
+      font-size: 4.2rem;
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      font-weight: 700;
+    }
+
+    .modal p {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 1.25rem;
+      line-height: 1.34;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .modal .goguardian {
+      color: #ff4a3f;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 118px;
+      height: 102px;
+      border: none;
+      border-radius: 36px;
+      background: var(--red);
+      color: #000;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 3.25rem;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    @media (max-width: 1300px) {
+      .title {
+        font-size: 4.5rem;
+      }
+
+      .learn-more {
+        width: 220px;
+        height: 92px;
+      }
+
+      .game-card .thumb {
+        width: 155px;
+        height: 145px;
+      }
+
+      .game-card .label {
+        font-size: 1.8rem;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .topbar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        min-height: unset;
+      }
+
+      .byline,
+      .learn-more {
+        position: static;
+      }
+
+      .title {
+        margin: 0;
+      }
+
+      .games-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .fnaf {
+        grid-column: auto;
+      }
+
+      .game-card {
+        min-height: 180px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 12px;
+      }
+
+      .byline {
+        font-size: 2rem;
+      }
+
+      .title {
+        font-size: 3.4rem;
+      }
+
+      .learn-more {
+        width: 100%;
+        max-width: 260px;
+      }
+
+      .game-card {
+        min-height: 150px;
+        border-radius: 28px;
+        padding: 0 16px;
+      }
+
+      .game-card .thumb {
+        width: 112px;
+        height: 100px;
+        margin-right: 14px;
+      }
+
+      .game-card .label {
+        font-size: 1.5rem;
+      }
+
+      .modal {
+        padding: 22px 16px 16px;
+      }
+
+      .modal h2 {
+        font-size: 2.8rem;
+        margin-right: 88px;
+      }
+
+      .modal p {
+        font-size: 1rem;
+      }
+
+      .close-modal {
+        width: 82px;
+        height: 72px;
+        font-size: 2.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <p class="byline">made by cruz rosario</p>
+      <h1 class="title">cruz core</h1>
+      <button type="button" class="learn-more" id="openModal" aria-label="Learn more about Cruz Core">
+        <span>learn more</span>
+      </button>
+    </header>
+
+    <main class="games-grid">
+      <a class="game-card duckmath" href="https://resources.a.staticdata.top/" aria-label="Open duckmath">
+        <div class="thumb">
+          <img src="https://duck-math.freetls.fastly.net/imgs/duck.webp" alt="Duckmath" />
+        </div>
+        <div class="label">duckmath</div>
+      </a>
+
+      <a class="game-card worldle" href="wordle.html" aria-label="Open worldle">
+        <div class="thumb">
+          <div class="worldle-w">W</div>
+        </div>
+        <div class="label">worldle</div>
+      </a>
+
+      <a class="game-card minecraft" href="https://classroomlesson.github.io/basic-ruffle-player/html/minecraft/duckcraft/duckcraft-v1.html" aria-label="Open minecraft">
+        <div class="thumb">
+          <img src="https://i.imgur.com/nKsYRdJ.png" alt="Minecraft" />
+        </div>
+        <div class="label">minecraft</div>
+      </a>
+
+      <a class="game-card plinko" href="https://plinko-game-online.github.io/" aria-label="Open plinko">
+        <div class="thumb">
+          <div class="plinko-word">Plinko</div>
+        </div>
+        <div class="label">plinko</div>
+      </a>
+
+      <a class="game-card snowrider" href="https://itsvijaysingh.github.io/Snow-Rider3D/" aria-label="Open snow rider">
+        <div class="thumb">
+          <img src="https://merlot.org/merlot/getMaterialImage.htm?id=773417944" alt="Snow Rider" />
+        </div>
+        <div class="label">snow rider</div>
+      </a>
+
+      <a class="game-card renweb" href="https://familyportal.renweb.com" aria-label="Open renweb">
+        <div class="thumb">
+          <img src="https://p.kindpng.com/picc/s/594-5943254_facts-facts-renweb-hd-png-download.png" alt="RenWeb" />
+        </div>
+        <div class="label">renweb</div>
+      </a>
+
+      <a class="game-card fnaf" href="https://algebraschoolstudy.github.io/SchoolStudyGuidesList/1/index.html" aria-label="Open fnaf 1">
+        <div class="thumb">
+          <img src="https://image.api.playstation.com/gs2-sec/appkgo/prod/CUSA18362_00/1/i_cd6a177c374f229f9cd8e1164a78d49f78af97820747d480daf8cdd3e965c248/i/icon0.png" alt="FNAF 1" />
+        </div>
+        <div class="label">fnaf 1</div>
+      </a>
+    </main>
+  </div>
+
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="close-modal" id="closeModal" aria-label="Close">x</button>
+      <h2 id="modalTitle">why I made this</h2>
+      <p>
+        my name is cruz rosario and i made this because i struggle to find the fun and games in core classes most of the time. i feel like we should have the right to play games during classes, because <span class="goguardian">GOGUARDIAN</span> is a invasion of privacy and this site will never be blocked by these simpletons. and at the end of the day, playing games like minecraft and wordle in class does not matter a single bit in my opinion. be safe and have fun!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const overlay = document.getElementById('overlay');
+      const openModal = document.getElementById('openModal');
+      const closeModal = document.getElementById('closeModal');
+
+      function showModal() {
+        overlay.classList.add('show');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
+
+      function hideModal() {
+        overlay.classList.remove('show');
+        overlay.setAttribute('aria-hidden', 'true');
+      }
+
+      if (openModal) {
+        openModal.onclick = showModal;
+      }
+
+      if (closeModal) {
+        closeModal.onclick = hideModal;
+      }
+
+      if (overlay) {
+        overlay.onclick = (e) => {
+          if (e.target === overlay) hideModal();
+        };
+      }
+
+      document.onkeydown = (e) => {
+        if (e.key === 'Escape') hideModal();
+      };
+    })();
+  </script>
+</body>
+</html>
