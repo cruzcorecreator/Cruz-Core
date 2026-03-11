@@ -16,6 +16,7 @@
       --dark-green: #0ac860;
       --gray-input: #8b8787;
       --shadow: rgba(0,0,0,0.18);
+      --danger: #ff3131;
     }
 
     body {
@@ -59,6 +60,49 @@
       text-transform: lowercase;
     }
 
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 2px 10px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .small-btn {
+      border: 4px solid #111;
+      border-radius: 999px;
+      background: #fff;
+      padding: 8px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      font-size: .95rem;
+    }
+
+    .small-btn.danger {
+      background: #ffd5d5;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 4px solid #111;
+      border-radius: 999px;
+      background: #fff;
+      padding: 7px 12px;
+      font-weight: 900;
+      font-size: .92rem;
+    }
+
     .messages {
       height: 520px;
       overflow-y: auto;
@@ -68,14 +112,82 @@
     .message {
       font-size: clamp(1.05rem, 2.3vw, 1.35rem);
       line-height: 1.45;
-      margin: 0 0 22px;
+      margin: 0 0 18px;
       word-break: break-word;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .message-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .message-actions {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .options-btn {
+      border: 3px solid #111;
+      background: #fff;
+      border-radius: 999px;
+      width: 38px;
+      height: 38px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .options-menu {
+      position: absolute;
+      top: 44px;
+      right: 0;
+      min-width: 180px;
+      background: #fff;
+      border: 4px solid #111;
+      border-radius: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+      padding: 6px;
+      z-index: 50;
+    }
+
+    .options-menu button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      text-align: left;
+      font-weight: 800;
+      cursor: pointer;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: .95rem;
+    }
+
+    .options-menu button:hover {
+      background: #ececec;
     }
 
     .name {
       font-weight: 900;
       margin-right: 10px;
       display: inline-block;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-right: 8px;
+      font-size: .95em;
+      vertical-align: baseline;
+    }
+
+    .meta-note {
+      display: block;
+      font-size: .72em;
+      font-weight: 800;
+      color: #555;
+      margin-top: 3px;
     }
 
     .msg-body {
@@ -270,6 +382,7 @@
       .bottom-panel { flex-direction: row; align-items: center; }
       .bottom-left h2 { font-size: 2.4rem; }
       .bottom-left p { font-size: .96rem; }
+      .toolbar { align-items: stretch; }
     }
   </style>
 </head>
@@ -279,6 +392,17 @@
 
     <section class="chat-shell" id="chatShell">
       <h2 class="chat-title">chatbox</h2>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <button class="small-btn" id="changeNameBtn" type="button">Change Name</button>
+          <div class="chip" id="identityChip">Not connected</div>
+        </div>
+        <div class="toolbar-right">
+          <button class="small-btn danger hidden" id="clearMuteBtn" type="button">Clear Local Mute/Ban</button>
+        </div>
+      </div>
+
       <div class="messages" id="messages"></div>
 
       <form class="composer" id="composerForm" autocomplete="off">
@@ -322,8 +446,17 @@
       getDatabase,
       ref,
       push,
+      set,
+      update,
+      remove,
+      get,
       onChildAdded,
+      onChildChanged,
+      onChildRemoved,
+      onValue,
       query,
+      orderByChild,
+      equalTo,
       limitToLast,
       serverTimestamp
     } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js';
@@ -339,23 +472,12 @@
       measurementId: 'G-KLSV3Q73MR'
     };
 
-    const hasFirebaseConfig = true;
-
-    const fallbackMessages = [
-      { name: 'placeholder', text: 'This is a placeholder chat message! Hi!' },
-      { name: 'namehello', text: 'This is a placeholder chat message! Hi!' },
-      { name: 'thisissomeone', text: 'This is a placeholder chat message! Hi!' },
-      { name: 'placeholder', text: 'This is a placeholder chat message! Hi!' },
-      { name: 'namehello', text: 'This is a placeholder chat message! Hi!' },
-      { name: 'thisissomeone', text: 'This is a placeholder chat message! Hi!' },
-      { name: 'placeholder', text: 'This is a placeholder chat message! Hi!' },
-      { name: 'namehello', text: 'This is a placeholder chat message! Hi!' }
-    ];
-
-    const nameColors = ['#7b54ff', '#0fc15e', '#ff3b30', '#3576ff', '#ff7a00', '#d133ff'];
+    const ADMIN_PASSWORDS = ['/Cruz10312', '/Stewie25'];
+    const RED_NAMES = ['cruz'];
     const blockedTerms = [
       'nigger','faggot','kike','spic','retard','rape','rapist','kill yourself','kys','suicide','porn','sex','cum','dick','pussy','bitch','slut','whore'
     ];
+    const nameColors = ['#7b54ff', '#0fc15e', '#3576ff', '#ff7a00', '#d133ff', '#00a6a6'];
 
     const messagesEl = document.getElementById('messages');
     const composerForm = document.getElementById('composerForm');
@@ -367,11 +489,49 @@
     const closeModalBtn = document.getElementById('closeModalBtn');
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     const appRoot = document.getElementById('appRoot');
+    const changeNameBtn = document.getElementById('changeNameBtn');
+    const identityChip = document.getElementById('identityChip');
+    const clearMuteBtn = document.getElementById('clearMuteBtn');
+
+    const app = initializeApp(firebaseConfig);
+    try { getAnalytics(app); } catch (error) { console.warn('Analytics unavailable on this page.', error); }
+    const db = getDatabase(app);
+
+    const CHAT_ROOT = 'fun-and-games-chat';
+    const messagesRootRef = ref(db, `${CHAT_ROOT}/messages`);
+    const profilesRootRef = ref(db, `${CHAT_ROOT}/profiles`);
+    const bansRootRef = ref(db, `${CHAT_ROOT}/bans`);
+    const mutesRootRef = ref(db, `${CHAT_ROOT}/mutes`);
+    const adminsRootRef = ref(db, `${CHAT_ROOT}/admins`);
+
+    const deviceId = localStorage.getItem('funAndGamesDeviceId') || crypto.randomUUID();
+    localStorage.setItem('funAndGamesDeviceId', deviceId);
 
     let currentName = localStorage.getItem('funAndGamesName') || '';
-    let seenIds = new Set();
-    let db = null;
-    let messagesRef = null;
+    let currentColor = localStorage.getItem('funAndGamesColor') || '';
+    let currentRole = localStorage.getItem('funAndGamesRole') || 'member';
+    let isLocalUnlockedAdmin = localStorage.getItem('funAndGamesUnlockedAdmin') === 'true';
+    let forcedProfile = null;
+    let activeBan = null;
+    let activeMute = null;
+    const seenIds = new Set();
+    const messageNodes = new Map();
+    const messageCache = new Map();
+    const profileCache = new Map();
+    const activeMenus = new Set();
+
+    function normalizeName(name) {
+      return name.replace(/\s+/g, ' ').trim().slice(0, 20);
+    }
+
+    function sanitizeMessage(text) {
+      return text.replace(/\s+/g, ' ').trim().slice(0, 300);
+    }
+
+    function containsBlockedTerm(text) {
+      const lower = text.toLowerCase();
+      return blockedTerms.some(term => lower.includes(term));
+    }
 
     function escapeHtml(text) {
       return text
@@ -382,67 +542,102 @@
         .replaceAll("'", '&#039;');
     }
 
-    function normalizeName(name) {
-      return name.replace(/\s+/g, ' ').trim().slice(0, 20);
-    }
-
-    function sanitizeMessage(text) {
-      return text.replace(/\s+/g, ' ').trim().slice(0, 300);
-    }
-
     function colorForName(name) {
+      if (RED_NAMES.includes((name || '').trim().toLowerCase())) return '#ff3131';
       let hash = 0;
       for (let i = 0; i < name.length; i += 1) hash = ((hash << 5) - hash) + name.charCodeAt(i);
       return nameColors[Math.abs(hash) % nameColors.length];
     }
 
-    function containsBlockedTerm(text) {
-      const lower = text.toLowerCase();
-      return blockedTerms.some(term => lower.includes(term));
+    function defaultProfile(name = currentName) {
+      return {
+        name,
+        color: currentColor || colorForName(name),
+        role: 'member'
+      };
     }
 
-    function appendMessage(data, id = crypto.randomUUID()) {
-      if (seenIds.has(id)) return;
-      seenIds.add(id);
+    function getOwnEffectiveRole() {
+      if (isLocalUnlockedAdmin) return 'admin';
+      if (currentRole === 'admin') return 'admin';
+      return 'member';
+    }
 
-      const row = document.createElement('p');
-      row.className = 'message';
+    function isAdmin() {
+      return getOwnEffectiveRole() === 'admin';
+    }
 
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'name';
-      nameSpan.textContent = data.name;
-      nameSpan.style.color = colorForName(data.name);
+    function isNameRed(name) {
+      return RED_NAMES.includes((name || '').trim().toLowerCase());
+    }
 
-      const bodySpan = document.createElement('span');
-      bodySpan.className = 'msg-body';
-      bodySpan.innerHTML = escapeHtml(data.text);
+    function getDisplayProfile(deviceKey, fallbackName = 'unknown') {
+      const profile = profileCache.get(deviceKey) || {};
+      const effectiveName = profile.forcedName || profile.name || fallbackName;
+      const effectiveRole = profile.role || 'member';
+      const effectiveColor = isNameRed(effectiveName)
+        ? '#ff3131'
+        : (profile.color || colorForName(effectiveName));
+      return {
+        name: effectiveName,
+        color: effectiveColor,
+        role: effectiveRole
+      };
+    }
 
-      row.append(nameSpan, bodySpan);
-      messagesEl.appendChild(row);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+    function getRemainingText(until) {
+      const ms = Number(until) - Date.now();
+      if (ms <= 0) return 'expired';
+      const mins = Math.ceil(ms / 60000);
+      if (mins >= 60) {
+        const hours = Math.floor(mins / 60);
+        const rest = mins % 60;
+        return `${hours}h ${rest}m`;
+      }
+      return `${mins}m`;
+    }
+
+    function updateIdentityChip() {
+      const roleText = isAdmin() ? 'Admin 👑' : 'Member';
+      const mutedText = activeMute && Number(activeMute.until) > Date.now() ? ` • muted ${getRemainingText(activeMute.until)}` : '';
+      const bannedText = activeBan && Number(activeBan.until) > Date.now() ? ` • banned ${getRemainingText(activeBan.until)}` : '';
+      identityChip.textContent = `${currentName || 'No name'} • ${roleText}${mutedText}${bannedText}`;
+      clearMuteBtn.classList.toggle('hidden', !(activeBan || activeMute));
     }
 
     function setStatus(text) {
       statusText.textContent = text;
+      updateIdentityChip();
     }
 
-    function loadFallbackMessages() {
-      messagesEl.innerHTML = '';
-      seenIds = new Set();
-      fallbackMessages.forEach((message, index) => appendMessage(message, `fallback-${index}`));
-      setStatus('Demo mode is on. Add your Firebase config in chatbox.html to make it live across computers.');
+    async function saveOwnProfile() {
+      if (!currentName) return;
+      const ownProfile = {
+        name: currentName,
+        color: isNameRed(currentName) ? '#ff3131' : (currentColor || colorForName(currentName)),
+        role: currentRole || 'member',
+        updatedAt: Date.now(),
+        lastSeenAt: Date.now()
+      };
+      await update(ref(db, `${CHAT_ROOT}/profiles/${deviceId}`), ownProfile);
+      profileCache.set(deviceId, ownProfile);
+      currentColor = ownProfile.color;
+      localStorage.setItem('funAndGamesColor', currentColor);
+      updateIdentityChip();
     }
 
-    function ensureName() {
-      if (currentName) {
+    function ensureNameModal(openForRename = false) {
+      if (currentName && !openForRename) {
         nameModal.classList.add('hidden');
       } else {
         nameModal.classList.remove('hidden');
+        nameInput.value = currentName;
         nameInput.focus();
+        nameInput.select();
       }
     }
 
-    function saveName() {
+    async function saveName() {
       const cleanName = normalizeName(nameInput.value);
       if (!cleanName) {
         setStatus('Enter a name first.');
@@ -450,37 +645,403 @@
         return;
       }
       currentName = cleanName;
-      localStorage.setItem('funAndGamesName', cleanName);
+      currentColor = isNameRed(currentName) ? '#ff3131' : colorForName(currentName);
+      localStorage.setItem('funAndGamesName', currentName);
+      localStorage.setItem('funAndGamesColor', currentColor);
       nameModal.classList.add('hidden');
-      setStatus(hasFirebaseConfig ? `Connected as ${cleanName}.` : `Demo mode as ${cleanName}.`);
+      await saveOwnProfile();
+      setStatus(`Connected as ${currentName}.`);
       messageInput.focus();
     }
 
-    async function setupFirebaseChat() {
-      const app = initializeApp(firebaseConfig);
-      try { getAnalytics(app); } catch (error) { console.warn('Analytics unavailable on this page.', error); }
-      db = getDatabase(app);
-      messagesRef = query(ref(db, 'fun-and-games-chat/messages'), limitToLast(100));
+    function closeAllMenus() {
+      activeMenus.forEach(menu => menu.remove());
+      activeMenus.clear();
+    }
 
-      onChildAdded(messagesRef, snapshot => {
+    document.addEventListener('click', event => {
+      if (!event.target.closest('.message-actions')) closeAllMenus();
+    });
+
+    function formatMessageHtml(message) {
+      const display = getDisplayProfile(message.deviceId, message.name || 'unknown');
+      const badge = display.role === 'admin' ? '<span class="badge">👑</span>' : '';
+      const edited = message.editedAt ? '<span class="meta-note">edited</span>' : '';
+      return {
+        nameHtml: `${badge}${escapeHtml(display.name)}`,
+        bodyHtml: `${escapeHtml(message.text)}${edited}`,
+        color: display.color,
+        role: display.role
+      };
+    }
+
+    function canModerateMessage(message) {
+      return isAdmin() || message.deviceId === deviceId;
+    }
+
+    function rebuildMessageElement(key) {
+      const row = messageNodes.get(key);
+      const message = messageCache.get(key);
+      if (!row || !message) return;
+
+      const nameSpan = row.querySelector('.name');
+      const bodySpan = row.querySelector('.msg-body');
+      const actions = row.querySelector('.message-actions');
+      const rendered = formatMessageHtml(message);
+
+      nameSpan.innerHTML = rendered.nameHtml;
+      nameSpan.style.color = rendered.color;
+      bodySpan.innerHTML = rendered.bodyHtml;
+      actions.innerHTML = '';
+
+      if (canModerateMessage(message)) {
+        const btn = document.createElement('button');
+        btn.className = 'options-btn';
+        btn.type = 'button';
+        btn.textContent = '⋯';
+        btn.addEventListener('click', event => {
+          event.stopPropagation();
+          toggleMessageMenu(key, actions, message);
+        });
+        actions.appendChild(btn);
+      }
+    }
+
+    function appendOrUpdateMessage(snapshotKey, message) {
+      messageCache.set(snapshotKey, message);
+      let row = messageNodes.get(snapshotKey);
+
+      if (!row) {
+        row = document.createElement('div');
+        row.className = 'message';
+        row.dataset.key = snapshotKey;
+        row.innerHTML = `
+          <div class="message-main">
+            <span class="name"></span><span class="msg-body"></span>
+          </div>
+          <div class="message-actions"></div>
+        `;
+        messagesEl.appendChild(row);
+        messageNodes.set(snapshotKey, row);
+      }
+
+      rebuildMessageElement(snapshotKey);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function removeMessageElement(snapshotKey) {
+      messageCache.delete(snapshotKey);
+      const row = messageNodes.get(snapshotKey);
+      if (row) row.remove();
+      messageNodes.delete(snapshotKey);
+    }
+
+    async function editMessage(key) {
+      const message = messageCache.get(key);
+      if (!message) return;
+      const nextText = prompt('Edit message:', message.text);
+      if (nextText === null) return;
+      const cleaned = sanitizeMessage(nextText);
+      if (!cleaned) {
+        setStatus('Message edit cancelled.');
+        return;
+      }
+      await update(ref(db, `${CHAT_ROOT}/messages/${key}`), {
+        text: cleaned,
+        editedAt: Date.now()
+      });
+      setStatus('Message updated.');
+    }
+
+    async function deleteMessage(key) {
+      await remove(ref(db, `${CHAT_ROOT}/messages/${key}`));
+      setStatus('Message deleted.');
+    }
+
+    async function adminSender(message) {
+      await update(ref(db, `${CHAT_ROOT}/profiles/${message.deviceId}`), {
+        role: 'admin',
+        updatedAt: Date.now()
+      });
+      setStatus('That user is now an admin.');
+    }
+
+    async function changeSenderColor(message) {
+      const nextColor = prompt('Enter a color like #ff0000 or blue:', getDisplayProfile(message.deviceId, message.name).color);
+      if (!nextColor) return;
+      await update(ref(db, `${CHAT_ROOT}/profiles/${message.deviceId}`), {
+        color: nextColor.trim(),
+        updatedAt: Date.now()
+      });
+      setStatus('Name color updated.');
+    }
+
+    async function changeSenderName(message) {
+      const nextName = prompt('Rename this user to:', getDisplayProfile(message.deviceId, message.name).name);
+      if (nextName === null) return;
+      const cleanName = normalizeName(nextName);
+      if (!cleanName) {
+        setStatus('Name change cancelled.');
+        return;
+      }
+      await update(ref(db, `${CHAT_ROOT}/profiles/${message.deviceId}`), {
+        forcedName: cleanName,
+        updatedAt: Date.now()
+      });
+      setStatus('Display name updated.');
+    }
+
+    async function banDevice(targetDeviceId, reason = '') {
+      const until = Date.now() + (60 * 60 * 1000);
+      await set(ref(db, `${CHAT_ROOT}/bans/${targetDeviceId}`), {
+        until,
+        reason,
+        updatedAt: Date.now()
+      });
+      setStatus('Device banned for 1 hour.');
+    }
+
+    async function muteDevice(targetDeviceId, reason = '') {
+      const until = Date.now() + (60 * 60 * 1000);
+      await set(ref(db, `${CHAT_ROOT}/mutes/${targetDeviceId}`), {
+        until,
+        reason,
+        updatedAt: Date.now()
+      });
+      setStatus('Device muted for 1 hour.');
+    }
+
+    function toggleMessageMenu(key, actionsEl, message) {
+      const oldMenu = actionsEl.querySelector('.options-menu');
+      closeAllMenus();
+      if (oldMenu) return;
+
+      const menu = document.createElement('div');
+      menu.className = 'options-menu';
+
+      const items = [];
+      if (message.deviceId === deviceId || isAdmin()) {
+        items.push(['Delete message', () => deleteMessage(key)]);
+        items.push(['Edit message', () => editMessage(key)]);
+      }
+      if (isAdmin()) {
+        items.push(['Change name color', () => changeSenderColor(message)]);
+        items.push(['Rename this user', () => changeSenderName(message)]);
+        items.push(['Make admin', () => adminSender(message)]);
+        items.push(['Mute 1 hour', () => muteDevice(message.deviceId, `Muted by ${currentName}`)]);
+        items.push(['Ban 1 hour', () => banDevice(message.deviceId, `Banned by ${currentName}`)]);
+      }
+
+      items.forEach(([label, handler]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = label;
+        btn.addEventListener('click', async () => {
+          closeAllMenus();
+          try {
+            await handler();
+          } catch (error) {
+            console.error(error);
+            setStatus('That action failed.');
+          }
+        });
+        menu.appendChild(btn);
+      });
+
+      actionsEl.appendChild(menu);
+      activeMenus.add(menu);
+    }
+
+    async function findLatestProfileByName(name) {
+      const cleanName = normalizeName(name).toLowerCase();
+      if (!cleanName) return null;
+
+      for (const [deviceKey, profile] of profileCache.entries()) {
+        const candidate = (profile.forcedName || profile.name || '').toLowerCase();
+        if (candidate === cleanName) return { deviceId: deviceKey, profile };
+      }
+
+      const snapshot = await get(query(profilesRootRef, orderByChild('name'), equalTo(normalizeName(name))));
+      if (!snapshot.exists()) return null;
+      let found = null;
+      snapshot.forEach(child => {
+        if (!found) found = { deviceId: child.key, profile: child.val() };
+      });
+      return found;
+    }
+
+    async function processCommand(text) {
+      const raw = text.trim();
+      if (!raw.startsWith('/')) return false;
+
+      if (ADMIN_PASSWORDS.includes(raw)) {
+        isLocalUnlockedAdmin = true;
+        localStorage.setItem('funAndGamesUnlockedAdmin', 'true');
+        setStatus('Admin mode unlocked on this device.');
+        return true;
+      }
+
+      const [command, ...parts] = raw.split(/\s+/);
+      const lower = command.toLowerCase();
+
+      if (lower === '/rename') {
+        const nextName = normalizeName(parts.join(' '));
+        if (!nextName) {
+          setStatus('Use /rename NewName');
+          return true;
+        }
+        currentName = nextName;
+        currentColor = isNameRed(currentName) ? '#ff3131' : colorForName(currentName);
+        localStorage.setItem('funAndGamesName', currentName);
+        localStorage.setItem('funAndGamesColor', currentColor);
+        await saveOwnProfile();
+        setStatus(`Your name is now ${currentName}.`);
+        return true;
+      }
+
+      if (!isAdmin()) {
+        setStatus('That command is admin-only.');
+        return true;
+      }
+
+      if (lower === '/ban' || lower === '/mute' || lower === '/admin') {
+        const targetName = normalizeName(parts.join(' '));
+        if (!targetName) {
+          setStatus(`Use ${command} username`);
+          return true;
+        }
+        const target = await findLatestProfileByName(targetName);
+        if (!target) {
+          setStatus('User not found.');
+          return true;
+        }
+        if (lower === '/ban') {
+          await banDevice(target.deviceId, `${command} by ${currentName}`);
+        } else if (lower === '/mute') {
+          await muteDevice(target.deviceId, `${command} by ${currentName}`);
+        } else {
+          await update(ref(db, `${CHAT_ROOT}/profiles/${target.deviceId}`), {
+            role: 'admin',
+            updatedAt: Date.now()
+          });
+          setStatus(`${targetName} is now an admin.`);
+        }
+        return true;
+      }
+
+      setStatus('Unknown command.');
+      return true;
+    }
+
+    function isBanActive(record) {
+      return !!(record && Number(record.until) > Date.now());
+    }
+
+    function isMuteActive(record) {
+      return !!(record && Number(record.until) > Date.now());
+    }
+
+    async function sendChatMessage(text) {
+      const ownProfile = getDisplayProfile(deviceId, currentName);
+      await push(messagesRootRef, {
+        name: ownProfile.name,
+        text,
+        deviceId,
+        createdAt: serverTimestamp(),
+        editedAt: null
+      });
+    }
+
+    async function setupLiveData() {
+      onChildAdded(query(messagesRootRef, limitToLast(200)), snapshot => {
         const value = snapshot.val();
-        if (!value || !value.name || !value.text) return;
-        appendMessage({ name: value.name, text: value.text }, snapshot.key);
+        if (!value || !value.text || !value.deviceId) return;
+        appendOrUpdateMessage(snapshot.key, value);
+      });
+
+      onChildChanged(messagesRootRef, snapshot => {
+        const value = snapshot.val();
+        if (!value) return;
+        appendOrUpdateMessage(snapshot.key, value);
+      });
+
+      onChildRemoved(messagesRootRef, snapshot => {
+        removeMessageElement(snapshot.key);
+      });
+
+      onValue(profilesRootRef, snapshot => {
+        profileCache.clear();
+        const data = snapshot.val() || {};
+        Object.entries(data).forEach(([key, value]) => profileCache.set(key, value));
+        if (profileCache.has(deviceId)) {
+          const me = profileCache.get(deviceId);
+          currentRole = me.role || 'member';
+          if (me.forcedName && me.forcedName !== currentName) {
+            currentName = me.forcedName;
+            localStorage.setItem('funAndGamesName', currentName);
+          }
+          currentColor = isNameRed(currentName) ? '#ff3131' : (me.color || currentColor || colorForName(currentName));
+          localStorage.setItem('funAndGamesColor', currentColor);
+          localStorage.setItem('funAndGamesRole', currentRole);
+        }
+        messageNodes.forEach((_, key) => rebuildMessageElement(key));
+        updateIdentityChip();
+      });
+
+      onValue(ref(db, `${CHAT_ROOT}/bans/${deviceId}`), snapshot => {
+        const value = snapshot.val();
+        activeBan = isBanActive(value) ? value : null;
+        if (value && !activeBan) remove(ref(db, `${CHAT_ROOT}/bans/${deviceId}`)).catch(() => {});
+        updateIdentityChip();
+        if (activeBan) setStatus(`This device is banned for ${getRemainingText(activeBan.until)}.`);
+      });
+
+      onValue(ref(db, `${CHAT_ROOT}/mutes/${deviceId}`), snapshot => {
+        const value = snapshot.val();
+        activeMute = isMuteActive(value) ? value : null;
+        if (value && !activeMute) remove(ref(db, `${CHAT_ROOT}/mutes/${deviceId}`)).catch(() => {});
+        updateIdentityChip();
       });
 
       setStatus(currentName ? `Connected as ${currentName}.` : 'Connected. Enter your name to chat.');
     }
 
-    confirmNameBtn.addEventListener('click', saveName);
-    closeModalBtn.addEventListener('click', () => {
-      nameInput.value = currentName;
-      ensureName();
+    confirmNameBtn.addEventListener('click', () => {
+      saveName().catch(error => {
+        console.error(error);
+        setStatus('Could not save your name.');
+      });
     });
+
+    closeModalBtn.addEventListener('click', () => {
+      if (!currentName) return;
+      nameModal.classList.add('hidden');
+    });
+
+    changeNameBtn.addEventListener('click', () => ensureNameModal(true));
 
     nameInput.addEventListener('keydown', event => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        saveName();
+        saveName().catch(error => {
+          console.error(error);
+          setStatus('Could not save your name.');
+        });
+      }
+    });
+
+    clearMuteBtn.addEventListener('click', async () => {
+      try {
+        await Promise.all([
+          remove(ref(db, `${CHAT_ROOT}/mutes/${deviceId}`)),
+          remove(ref(db, `${CHAT_ROOT}/bans/${deviceId}`))
+        ]);
+        activeBan = null;
+        activeMute = null;
+        setStatus('Local mute/ban cleared for this device.');
+      } catch (error) {
+        console.error(error);
+        setStatus('Could not clear local mute/ban.');
       }
     });
 
@@ -488,7 +1049,7 @@
       event.preventDefault();
 
       if (!currentName) {
-        ensureName();
+        ensureNameModal();
         setStatus('Pick a name first.');
         return;
       }
@@ -496,29 +1057,34 @@
       const text = sanitizeMessage(messageInput.value);
       if (!text) return;
 
-      if (containsBlockedTerm(text)) {
-        setStatus('That message was blocked by the chat filter.');
-        return;
-      }
-
-      const payload = { name: currentName, text };
-
-      if (hasFirebaseConfig && db && messagesRef) {
-        try {
-          await push(ref(db, 'fun-and-games-chat/messages'), {
-            ...payload,
-            createdAt: serverTimestamp()
-          });
+      try {
+        if (await processCommand(text)) {
           messageInput.value = '';
-          setStatus('Message sent.');
-        } catch (error) {
-          console.error(error);
-          setStatus('Could not send message right now.');
+          return;
         }
-      } else {
-        appendMessage(payload);
+
+        if (isBanActive(activeBan)) {
+          setStatus(`This device is banned for ${getRemainingText(activeBan.until)}.`);
+          return;
+        }
+
+        if (isMuteActive(activeMute)) {
+          setStatus(`This device is muted for ${getRemainingText(activeMute.until)}.`);
+          return;
+        }
+
+        if (containsBlockedTerm(text)) {
+          setStatus('That message was blocked by the chat filter.');
+          return;
+        }
+
+        await saveOwnProfile();
+        await sendChatMessage(text);
         messageInput.value = '';
-        setStatus('Demo mode only on this device. Add Firebase config for live online chat.');
+        setStatus('Message sent.');
+      } catch (error) {
+        console.error(error);
+        setStatus('Could not send message right now.');
       }
     });
 
@@ -536,17 +1102,14 @@
     });
 
     if (currentName) nameInput.value = currentName;
+    updateIdentityChip();
+    ensureNameModal();
 
-    ensureName();
-
-    if (hasFirebaseConfig) {
-      setupFirebaseChat().catch(error => {
-        console.error(error);
-        loadFallbackMessages();
-      });
-    } else {
-      loadFallbackMessages();
-    }
+    saveOwnProfile().catch(() => {});
+    setupLiveData().catch(error => {
+      console.error(error);
+      setStatus('Could not start chat. Check your Firebase database rules.');
+    });
   </script>
 </body>
 </html>
