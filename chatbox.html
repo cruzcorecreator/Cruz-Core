@@ -135,7 +135,7 @@
       member: { label: 'member', rank: 0, badge: '', color: '' }
     };
     const SELECTABLE_ROLES = ['member', 'helper', 'mod', 'admin'];
-    const blockedTerms = ['nigger','faggot','kike','spic','retard','rape','rapist','kill yourself','kys','suicide','porn','sex','cum','dick','pussy','bitch','slut','whore'];
+    const blockedTerms = ['nigger','faggot','kike','spic','retard','rape','rapist','kill yourself','kys','suicide','porn','sex','cum','dick','pussy','bitch','slut','whore','fuck','vagina','bitch','ass','nigga','nigg'];
 
     const messagesEl = document.getElementById('messages');
     const composerForm = document.getElementById('composerForm');
@@ -168,7 +168,10 @@
     let ownerUnlocked = false;
     let adminUnlocked = false;
     let lastSentAt = 0;
-
+    let savedRole = localStorage.getItem("chat_role");
+    if (savedRole) {
+    currentRole = savedRole;
+    }
     function normalizeName(name) { return (name || '').replace(/\s+/g, ' ').trim().slice(0, 20); }
     function sanitizeMessage(text) { return (text || '').replace(/\s+/g, ' ').trim().slice(0, 300); }
     function escapeHtml(text) { return String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'", '&#039;'); }
@@ -467,6 +470,8 @@
         adminUnlocked = false;
         await saveProfile({ role: 'owner' });
         appendSystemMessage('Owner mode enabled on this device.');
+        localStorage.setItem("chat_role", "owner");
+        return;
         return true;
       }
       if (input === '/Stewie25') {
