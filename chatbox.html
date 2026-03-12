@@ -766,10 +766,22 @@
           setStatus('User muted for an hour.');
         }));
 
+        menu.appendChild(buildMenuButton('Timeout 3 minutes', async () => {
+          if (roleRank(target.role) >= roleRank('admin')) return setStatus('Admins cannot be timed out.');
+          await update(ref(db, `${DB_ROOT}/profiles/${message.authorId}`), { mutedUntil: Date.now() + 180000, frozenUntil: Date.now() + 180000 });
+          setStatus('User timed out for 3 minutes.');
+        }));
+
         menu.appendChild(buildMenuButton('Ban 1 hour', async () => {
           if (roleRank(target.role) >= roleRank('admin')) return setStatus('Admins cannot be banned.');
           await update(ref(db, `${DB_ROOT}/profiles/${message.authorId}`), { bannedUntil: Date.now() + 3600000 });
           setStatus('User banned for an hour.');
+        }));
+
+        menu.appendChild(buildMenuButton('Unban / Unmute', async () => {
+          if (roleRank(target.role) >= roleRank('admin')) return setStatus('Admins cannot be changed here.');
+          await update(ref(db, `${DB_ROOT}/profiles/${message.authorId}`), { bannedUntil: 0, mutedUntil: 0, frozenUntil: 0 });
+          setStatus('User unbanned and unmuted.');
         }));
       }
 
