@@ -2,84 +2,254 @@
 <html lang="en"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>fun and games</title>
+  <title>fun and games — geometry dash</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     :root {
-      --bg: #d9e0d6;
-      --border: #7a7676;
-      --panel: #efefef;
-      --green: #f3f3f3;
-      --text: #000;
-      --muted: #8a8a8a;
-      --link: #1388db;
+      --bg-1: #0b1220;
+      --bg-2: #111827;
+      --panel: rgba(15, 23, 42, 0.72);
+      --panel-strong: rgba(15, 23, 42, 0.92);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #f8fafc;
+      --muted: #a5b4cc;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.34);
+      --accent: #60a5fa;
+      --accent-2: #22d3ee;
+      --dash-gradient: linear-gradient(135deg, #38bdf8 0%, #2563eb 48%, #8b5cf6 100%);
     }
 
     html, body {
       margin: 0;
       min-height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Georgia, "Times New Roman", serif;
     }
 
     body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(139, 92, 246, 0.16), transparent 28%),
+        linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 52%, #09111f 100%);
       overflow-x: hidden;
     }
 
-    .page {
-      min-height: 100vh;
-      padding: 6px 8px 28px;
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent 92%);
     }
 
-    .top {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 26px;
-    }
-
-    .byline,
-    .brand {
-      margin: 0;
-      font-weight: 700;
-      letter-spacing: -0.05em;
-      line-height: 0.95;
-      color: #000;
-    }
-
-    .byline {
-      font-size: clamp(2.2rem, 2.8vw, 3.2rem);
-    }
-
-    .brand {
-      font-size: clamp(3rem, 4vw, 4.9rem);
-      text-transform: lowercase;
-      text-align: right;
+    .page-wrap {
+      width: min(1400px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 42px;
+      position: relative;
+      z-index: 1;
     }
 
     .shell {
-      width: min(1060px, calc(100vw - 36px));
-      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--card-border);
+      border-radius: 38px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
+
+    .hero {
+      position: relative;
+      padding: 28px 28px 22px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(56, 189, 248, 0.14), transparent 30%),
+        radial-gradient(circle at 80% 15%, rgba(139, 92, 246, 0.12), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 26px;
+      flex-wrap: wrap;
+    }
+
+    .chip-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 54px;
+      padding: 0 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .chip-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    .hero-main {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #dbeafe;
+      background: rgba(59, 130, 246, 0.16);
+      border: 1px solid rgba(96, 165, 250, 0.24);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .site-title {
+      margin: 0;
+      font-size: clamp(3rem, 6vw, 5.4rem);
+      line-height: 0.9;
+      letter-spacing: -0.07em;
+      font-weight: 900;
+      text-transform: lowercase;
+    }
+
+    .site-subtitle {
+      margin: 16px 0 0;
+      max-width: 720px;
+      font-size: 1.05rem;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .stat-card {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      min-height: 110px;
+    }
+
+    .stat-label {
+      font-size: 0.84rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      font-size: 1.9rem;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      margin-bottom: 4px;
+    }
+
+    .stat-note {
+      font-size: 0.95rem;
+      color: #d8e5f7;
+    }
+
+    .content {
+      padding: 28px;
+    }
+
+    .player-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.55fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .viewer-card,
+    .info-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 30px;
+      overflow: hidden;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.18);
+    }
+
+    .viewer-head,
+    .info-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .viewer-title,
+    .info-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .viewer-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 14px rgba(34, 197, 94, 0.9);
     }
 
     .viewer {
-      width: 100%;
-      height: min(620px, 63vh);
-      background: var(--panel);
-      border: 7px solid var(--border);
-      border-radius: 46px;
-      overflow: hidden;
       position: relative;
+      background: #fff;
+      aspect-ratio: 16 / 10.2;
+      min-height: 520px;
     }
 
-    .minecraft-frame {
+    .game-frame {
       width: 100%;
       height: 100%;
-      border: none;
+      border: 0;
       display: block;
       background: #fff;
     }
@@ -92,11 +262,11 @@
       justify-content: center;
       text-align: center;
       padding: 32px;
-      font-family: Arial, Helvetica, sans-serif;
       font-weight: 800;
-      font-size: 1.4rem;
+      font-size: 1.1rem;
       letter-spacing: -0.03em;
       background: #efefef;
+      color: #0f172a;
     }
 
     .viewer-fallback.show {
@@ -108,217 +278,344 @@
     }
 
     .viewer-fallback a {
-      color: var(--link);
+      color: #2563eb;
     }
 
-    .bottom-card {
-      width: 100%;
-      margin-top: 2px;
-      background: var(--green);
-      border: 7px solid var(--border);
-      border-radius: 0 0 46px 46px;
-      padding: 18px 26px 14px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 16px;
-      align-items: center;
+    .info-body {
+      padding: 20px;
+    }
+
+    .cover-card {
+      background: var(--dash-gradient);
+      color: #eff6ff;
+      border-radius: 26px;
+      padding: 20px;
+      min-height: 230px;
       position: relative;
-      min-height: 136px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
     }
 
-    .bottom-left {
-      min-width: 0;
+    .cover-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02) 48%, rgba(0,0,0,0.08));
+      pointer-events: none;
+    }
+
+    .game-tag {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.18);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 18px;
     }
 
     .game-title {
+      position: relative;
       margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: clamp(2.5rem, 3vw, 3.6rem);
-      line-height: 0.95;
-      font-weight: 800;
-      letter-spacing: -0.05em;
+      font-size: clamp(2rem, 4vw, 3.1rem);
+      line-height: 0.92;
+      font-weight: 900;
+      letter-spacing: -0.06em;
       text-transform: lowercase;
+      max-width: 8ch;
     }
 
-    .game-link {
-      display: inline-block;
-      margin-top: 2px;
-      margin-left: 30px;
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: clamp(1rem, 1.3vw, 1.55rem);
-      line-height: 1;
-      font-weight: 800;
-      color: var(--link);
-      text-decoration: underline;
-      text-underline-offset: 2px;
+    .game-copy {
+      position: relative;
+      margin: 14px 0 0;
+      max-width: 28ch;
+      font-size: 0.98rem;
+      line-height: 1.5;
+      color: rgba(239,246,255,0.88);
+      font-weight: 700;
     }
 
-    .credits {
+    .shape-stack {
       position: absolute;
-      left: 50%;
-      bottom: 12px;
-      transform: translateX(-50%);
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: clamp(1.2rem, 1.5vw, 2rem);
-      line-height: 1;
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      color: var(--muted);
-      text-transform: uppercase;
-      white-space: nowrap;
-      text-align: center;
-    }
-
-    .expand-btn {
-      width: 88px;
-      height: 88px;
-      border: none;
-      background: transparent;
+      right: 18px;
+      bottom: 16px;
       display: grid;
-      place-items: center;
-      cursor: pointer;
+      gap: 10px;
+      transform: rotate(-8deg);
+    }
+
+    .shape {
+      width: 68px;
+      height: 68px;
       border-radius: 18px;
-      transition: transform 0.15s ease, background 0.15s ease;
-      margin-right: 6px;
+      background: rgba(255,255,255,0.22);
+      border: 2px solid rgba(255,255,255,0.2);
+      backdrop-filter: blur(5px);
     }
 
-    .expand-btn:hover {
-      transform: scale(1.05);
-      background: rgba(255,255,255,0.12);
+    .shape:nth-child(2) {
+      width: 54px;
+      height: 54px;
+      margin-left: 24px;
+      transform: rotate(45deg);
+      border-radius: 14px;
     }
 
-    .expand-btn svg {
-      width: 48px;
-      height: 48px;
-      stroke: #111;
-      stroke-width: 2.8;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+    .shape:nth-child(3) {
+      width: 84px;
+      height: 16px;
+      margin-left: 4px;
+      border-radius: 999px;
     }
 
-    @media (max-width: 900px) {
-      .shell {
-        width: min(100%, calc(100vw - 24px));
+    .action-group {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 56px;
+      padding: 0 18px;
+      border-radius: 18px;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.12);
+      font-weight: 800;
+      font-size: 0.98rem;
+      letter-spacing: -0.02em;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .action-btn.primary {
+      background: linear-gradient(135deg, #38bdf8, #3b82f6);
+      color: #fff;
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    .action-btn.secondary {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .detail-card {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .detail-label {
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .detail-value {
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .credit-line {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 1100px) {
+      .hero-main,
+      .player-layout {
+        grid-template-columns: 1fr;
       }
 
       .viewer {
-        height: 56vh;
-        border-radius: 34px;
-      }
-
-      .bottom-card {
-        border-radius: 0 0 34px 34px;
-        grid-template-columns: 1fr auto;
-        padding: 16px 18px 44px;
-      }
-
-      .credits {
-        font-size: 1rem;
-        bottom: 10px;
+        min-height: 460px;
       }
     }
 
-    @media (max-width: 640px) {
-      .page {
-        padding: 10px 6px 18px;
+    @media (max-width: 760px) {
+      .page-wrap {
+        width: min(100% - 20px, 1400px);
+        padding: 12px 0 24px;
       }
 
-      .top {
-        align-items: flex-start;
-        gap: 12px;
+      .hero,
+      .content {
+        padding: 18px;
       }
 
-      .byline {
-        max-width: 52%;
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
       }
 
-      .brand {
-        max-width: 44%;
+      .chip-btn,
+      .action-btn {
+        width: 100%;
+      }
+
+      .hero-stats,
+      .details-grid {
+        grid-template-columns: 1fr;
       }
 
       .viewer {
-        height: 50vh;
-        border-width: 5px;
-        border-radius: 26px;
+        min-height: 360px;
       }
 
-      .bottom-card {
-        min-height: 112px;
-        border-width: 5px;
-        border-radius: 0 0 26px 26px;
-        padding: 14px 14px 40px;
+      .viewer-head,
+      .info-head,
+      .info-body {
+        padding: 16px;
       }
 
-      .game-link {
-        margin-left: 0;
-      }
-
-      .expand-btn {
-        width: 64px;
-        height: 64px;
-      }
-
-      .expand-btn svg {
-        width: 36px;
-        height: 36px;
-      }
-
-      .credits {
-        font-size: 0.86rem;
-        white-space: normal;
-        width: calc(100% - 20px);
+      .game-title {
+        max-width: none;
       }
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <header class="top">
-      <h1 class="byline">made by a genius</h1>
-      <h2 class="brand">fun and games</h2>
-    </header>
+  <div class="page-wrap">
+    <div class="shell">
+      <header class="hero">
+        <div class="topbar">
+          <a class="chip-btn" href="index.html">← back to homepage</a>
+          <a class="chip-btn" href="https://geometrylitepc.io/geo-dash-lite-pc.embed" target="_blank" rel="noopener noreferrer">open embed source</a>
+        </div>
 
-    <main class="shell">
-      <section class="viewer" aria-label="ChatGPT window">
-        <iframe id="chatgptFrame" class="minecraft-frame" src="https://geometrylitepc.io/geo-dash-lite-pc.embed" title="ChatGPT" loading="eager" referrerpolicy="no-referrer" allowfullscreen=""></iframe>
+        <div class="hero-main">
+          <div>
+            <div class="eyebrow">featured game</div>
+            <h1 class="site-title">geometry dash</h1>
+            <p class="site-subtitle">geometry dash is a fast arcade platformer where you dodge spikes, jump through obstacles, and try not to crash.</p>
+          </div>
 
-        <div class="viewer-fallback" id="fallback">
-          <div class="inner">
-            ChatGPT usually blocks being shown inside an embedded frame.<br><br>
-            Use the fullscreen button or open
-            <a href="https://chatgpt.com" target="_blank" rel="noopener noreferrer">ChatGPT directly</a>.
+          <div class="hero-stats">
+            <div class="stat-card">
+              <div class="stat-label">Platform</div>
+              <div class="stat-value">Web Game</div>
+              <div class="stat-note">Quick runs and rhythm-style timing.</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">status</div>
+              <div class="stat-value">Working</div>
+              <div class="stat-note">Ready to play in browser.</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Added</div>
+              <div class="stat-value">March 10, 2026</div>
+              <div class="stat-note">Added alongside Doodle Jump, and Ragdoll Hit.</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Credit</div>
+              <div class="stat-value">RobTop</div>
+              <div class="stat-note">Original game credit stays with RobTop.</div>
+            </div>
           </div>
         </div>
-      </section>
+      </header>
 
-      <section class="bottom-card" aria-label="ChatGPT info">
-        <div class="bottom-left">
-          <h3 class="game-title">geometry dash</h3>
-          <a class="game-link" href="geometrydash-lite.com" target="_blank" rel="noopener noreferrer">geometry dash</a>
-        </div>
+      <main class="content">
+        <section class="player-layout">
+          <div class="viewer-card">
+            <div class="viewer-head">
+              <h2 class="viewer-title">Game</h2>
+              <div class="viewer-meta">
+                <span class="status-dot"></span>
+                live
+              </div>
+            </div>
 
-        <button class="expand-btn" id="expandBtn" type="button" aria-label="Open ChatGPT in a new tab">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 10V4h6"></path>
-            <path d="M20 14v6h-6"></path>
-            <path d="M10 20H4v-6"></path>
-            <path d="M14 4h6v6"></path>
-          </svg>
-        </button>
+            <div class="viewer" aria-label="Geometry Dash window">
+              <iframe id="gameFrame" class="game-frame" src="https://geometrylitepc.io/geo-dash-lite-pc.embed" title="Geometry Dash" loading="eager" referrerpolicy="no-referrer" allowfullscreen="">
+              </iframe>
 
-        <div class="credits">ALL CREDITS GO TO GEOMETRY DASH</div>
-      </section>
-    </main>
+              <div class="viewer-fallback" id="fallback">
+                <div class="inner">
+                  This game may block being shown inside an embedded frame.<br><br>
+                  Use the open button to play it directly in a new tab:
+                  <br><br>
+                  <a href="https://geometrylitepc.io/geo-dash-lite-pc.embed" target="_blank" rel="noopener noreferrer">Open Geometry Dash</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="info-card">
+            <div class="info-head">
+              <h2 class="info-title">Game info</h2>
+            </div>
+
+            <div class="info-body">
+              <div class="cover-card">
+                <div class="game-tag">platform game</div>
+                <h3 class="game-title">geometry dash</h3>
+                
+
+                
+              </div>
+
+              <div class="action-group">
+                <button class="action-btn primary" id="openGameBtn" type="button">open game in new tab</button>
+                <a class="action-btn secondary" href="index.html">go back to fun and games</a>
+              </div>
+
+              <div class="details-grid">
+                <div class="detail-card">
+                  <div class="detail-label">Source</div>
+                  <div class="detail-value">Geometry Dash Lite</div>
+                </div>
+                
+                
+                <div class="detail-card">
+                  <div class="detail-label">Credits</div>
+                  <div class="detail-value">All credits go to RobTop.</div>
+                </div>
+              </div>
+
+              <div class="credit-line">have fun and be safe!</div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
   </div>
 
   <script>
-    const expandBtn = document.getElementById('expandBtn');
-    const frame = document.getElementById('chatgptFrame');
+    const openGameBtn = document.getElementById('openGameBtn');
+    const frame = document.getElementById('gameFrame');
     const fallback = document.getElementById('fallback');
+    const gameUrl = 'https://geometrylitepc.io/geo-dash-lite-pc.embed';
 
-    expandBtn.addEventListener('click', () => {
-      window.open('https://chatgpt.com', '_blank', 'noopener,noreferrer');
+    openGameBtn.addEventListener('click', () => {
+      window.open(gameUrl, '_blank', 'noopener,noreferrer');
     });
 
     let frameLoaded = false;
@@ -333,5 +630,6 @@
       }
     }, 2500);
   </script>
+
 
 </body></html>
