@@ -543,9 +543,12 @@
           <div class="viewer-card">
             <div class="viewer-head">
               <h2 class="viewer-title">Game</h2>
-              <div class="viewer-meta">
-                <span class="status-dot"></span>
-                live
+              <div style="display:flex;gap:12px;align-items:center;">
+                <button id="fullscreenBtn" class="chip-btn">fullscreen</button>
+                <div class="viewer-meta">
+                  <span class="status-dot"></span>
+                  live
+                </div>
               </div>
             </div>
 
@@ -578,7 +581,7 @@
               </div>
 
               <div class="action-group">
-                <button class="action-btn primary" id="openGameBtn" type="button">open directly</button>
+                
                 <a class="action-btn secondary" href="index.html">go back to fun and games</a>
               </div>
 
@@ -603,120 +606,137 @@
     </div>
   </div>
 
-  
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDvKpZacWOgca6PtoA6wP2QFX3JbI-Dvw4",
-    authDomain: "funandgames-4e8c1.firebaseapp.com",
-    databaseURL: "https://funandgames-4e8c1-default-rtdb.firebaseio.com",
-    projectId: "funandgames-4e8c1",
-    storageBucket: "funandgames-4e8c1.firebasestorage.app",
-    messagingSenderId: "240713956788",
-    appId: "1:240713956788:web:37b64a7a534f1e2bea06e1",
-    measurementId: "G-KLSV3Q73MR"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDvKpZacWOgca6PtoA6wP2QFX3JbI-Dvw4",
+      authDomain: "funandgames-4e8c1.firebaseapp.com",
+      databaseURL: "https://funandgames-4e8c1-default-rtdb.firebaseio.com",
+      projectId: "funandgames-4e8c1",
+      storageBucket: "funandgames-4e8c1.firebasestorage.app",
+      messagingSenderId: "240713956788",
+      appId: "1:240713956788:web:37b64a7a534f1e2bea06e1",
+      measurementId: "G-KLSV3Q73MR"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-  const params = new URLSearchParams(window.location.search);
-  const gameId = params.get('id');
+    const params = new URLSearchParams(window.location.search);
+    const gameId = params.get('id');
 
-  const openGameBtn = document.getElementById('openGameBtn');
-  const frame = document.getElementById('gameFrame');
-  const fallback = document.getElementById('fallback');
+    const frame = document.getElementById('gameFrame');
+    const fallback = document.getElementById('fallback');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const viewer = document.querySelector('.viewer');
 
-  const pageTitle = document.querySelector('.site-title');
-  const pageSubtitle = document.querySelector('.site-subtitle');
-  const statValues = document.querySelectorAll('.stat-value');
-  const viewerTitle = document.querySelector('.viewer-title');
-  const viewerMeta = document.querySelector('.viewer-meta');
-  const gameTag = document.querySelector('.cover-card .game-tag');
-  const gameTitle = document.querySelector('.cover-card .game-title');
-  const detailValues = document.querySelectorAll('.detail-value');
-  const creditLine = document.querySelector('.credit-line');
-  const fallbackLink = fallback.querySelector('a');
+    const pageTitle = document.querySelector('.site-title');
+    const pageSubtitle = document.querySelector('.site-subtitle');
+    const statValues = document.querySelectorAll('.stat-value');
+    const viewerTitle = document.querySelector('.viewer-title');
+    const viewerMeta = document.querySelector('.viewer-meta');
+    const gameTag = document.querySelector('.cover-card .game-tag');
+    const gameTitle = document.querySelector('.cover-card .game-title');
+    const detailValues = document.querySelectorAll('.detail-value');
+    const creditLine = document.querySelector('.credit-line');
+    const fallbackLink = fallback ? fallback.querySelector('a') : null;
 
-  const escapeHtml = (value='') => String(value).replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  const setText = (node, value) => { if (node) node.textContent = value ?? ''; };
+    const escapeHtml = (value='') => String(value).replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const setText = (node, value) => { if (node) node.textContent = value ?? ''; };
 
-  function showMissing(message) {
-    setText(pageTitle, 'game not found');
-    setText(pageSubtitle, message || 'This item could not be loaded.');
-    setText(viewerTitle, 'Unavailable');
-    setText(gameTitle, 'Missing item');
-    frame.removeAttribute('src');
-    frame.style.display = 'none';
-    fallback.classList.add('show');
-    fallback.querySelector('.inner').innerHTML = `${escapeHtml(message || 'This item could not be loaded.')}<br><br><a href="index.html">Go back to fun and games</a>`;
-    if (openGameBtn) openGameBtn.style.display = 'none';
-  }
-
-  try {
-    if (!gameId) {
-      showMissing('No game id was provided.');
-      throw new Error('missing id');
+    function showMissing(message) {
+      setText(pageTitle, 'game not found');
+      setText(pageSubtitle, message || 'This item could not be loaded.');
+      setText(viewerTitle, 'Unavailable');
+      setText(gameTitle, 'Missing item');
+      if (frame) {
+        frame.removeAttribute('src');
+        frame.style.display = 'none';
+      }
+      if (fallback) {
+        fallback.classList.add('show');
+        const inner = fallback.querySelector('.inner');
+        if (inner) {
+          inner.innerHTML = `${escapeHtml(message || 'This item could not be loaded.')}<br><br><a href="index.html">Go back to fun and games</a>`;
+        }
+      }
     }
 
-    const snap = await get(ref(db, `homepageAdmin/games/${gameId}`));
-    if (!snap.exists()) {
-      showMissing('That game or app does not exist anymore.');
-      throw new Error('game not found');
-    }
-
-    const game = snap.val() || {};
-    const launchUrl = game.sourceUrl || game.embedUrl || '';
-
-    if (game.locked) {
-      window.location.href = 'construction.html';
-      throw new Error('locked');
-    }
-
-    if (game.openMode === 'redirect') {
-      window.location.href = launchUrl;
-      throw new Error('redirected');
-    }
-
-    document.title = `${game.title || 'fun and games'} - fun and games`;
-    setText(pageTitle, game.title || 'untitled');
-    setText(pageSubtitle, game.description || 'launching your selected item');
-    if (statValues[0]) statValues[0].textContent = game.platform || 'browser';
-    if (statValues[1]) statValues[1].textContent = game.statusText || 'live';
-    if (statValues[2]) statValues[2].textContent = game.addedText || 'new';
-    if (statValues[3]) statValues[3].textContent = game.credits || 'original creators';
-    setText(viewerTitle, game.type === 'app' ? 'App' : 'Game');
-    if (viewerMeta) viewerMeta.innerHTML = '<span class="status-dot"></span>' + escapeHtml(game.statusText || 'live');
-    setText(gameTag, game.tag || game.type || 'game');
-    setText(gameTitle, game.title || 'untitled');
-    if (detailValues[0]) detailValues[0].textContent = game.sourceLabel || 'launch url';
-    if (detailValues[1]) detailValues[1].textContent = game.credits || 'original creators';
-    setText(creditLine, game.description || 'have fun and be safe!');
-
-    frame.src = game.embedUrl || launchUrl;
-    frame.title = game.title || 'fun and games item';
-    if (fallbackLink) {
-      fallbackLink.href = launchUrl || '#';
-      fallbackLink.textContent = `Open ${game.title || 'item'}`;
-    }
-    if (openGameBtn) {
-      openGameBtn.addEventListener('click', () => {
-        window.open(launchUrl || frame.src, '_blank', 'noopener,noreferrer');
+    if (fullscreenBtn && viewer) {
+      fullscreenBtn.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          viewer.requestFullscreen().catch(err => console.error(err));
+        } else {
+          document.exitFullscreen();
+        }
       });
     }
 
-    let frameLoaded = false;
-    frame.addEventListener('load', () => { frameLoaded = true; });
-    setTimeout(() => {
-      if (!frameLoaded) {
-        fallback.classList.add('show');
+    try {
+      if (!gameId) {
+        showMissing('No game id was provided.');
+        throw new Error('missing id');
       }
-    }, 2500);
-  } catch (error) {
-    console.error(error);
-  }
-</script>
+
+      const snap = await get(ref(db, `homepageAdmin/games/${gameId}`));
+      if (!snap.exists()) {
+        showMissing('That game or app does not exist anymore.');
+        throw new Error('game not found');
+      }
+
+      const game = snap.val() || {};
+      const launchUrl = game.sourceUrl || game.embedUrl || '';
+
+      if (game.locked) {
+        window.location.href = 'construction.html';
+        throw new Error('locked');
+      }
+
+      if (game.openMode === 'redirect') {
+        window.location.href = launchUrl;
+        throw new Error('redirected');
+      }
+
+      document.title = `${game.title || 'fun and games'} - fun and games`;
+      setText(pageTitle, game.title || 'untitled');
+      setText(pageSubtitle, game.description || 'launching your selected item');
+      if (statValues[0]) statValues[0].textContent = game.platform || 'browser';
+      if (statValues[1]) statValues[1].textContent = game.statusText || 'live';
+      if (statValues[2]) statValues[2].textContent = game.addedText || 'new';
+      if (statValues[3]) statValues[3].textContent = game.credits || 'original creators';
+      setText(viewerTitle, game.type === 'app' ? 'App' : 'Game');
+      if (viewerMeta) viewerMeta.innerHTML = '<span class="status-dot"></span>' + escapeHtml(game.statusText || 'live');
+      setText(gameTag, game.tag || game.type || 'game');
+      setText(gameTitle, game.title || 'untitled');
+      if (detailValues[0]) detailValues[0].textContent = game.sourceLabel || 'launch url';
+      if (detailValues[1]) detailValues[1].textContent = game.credits || 'original creators';
+      setText(creditLine, game.description || 'have fun and be safe!');
+
+      if (frame) {
+        frame.src = game.embedUrl || launchUrl;
+        frame.title = game.title || 'fun and games item';
+      }
+
+      if (fallbackLink) {
+        fallbackLink.href = launchUrl || '#';
+        fallbackLink.textContent = `Open ${game.title || 'item'}`;
+      }
+
+      let frameLoaded = false;
+      if (frame) {
+        frame.addEventListener('load', () => { frameLoaded = true; });
+      }
+
+      setTimeout(() => {
+        if (!frameLoaded && fallback) {
+          fallback.classList.add('show');
+        }
+      }, 2500);
+    } catch (error) {
+      console.error(error);
+    }
+  </script>
 
 </body></html>
