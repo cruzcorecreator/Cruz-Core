@@ -612,7 +612,7 @@
             </div>
           </div>
         </div>
-      </header>
+      <button id="jokeBtn" class="chip-btn">joke of the day</button></header>
 
       <main class="content">
         <div class="announcement-bar" id="announcementBar"></div>
@@ -1085,7 +1085,11 @@
       adminUsername: document.getElementById('adminUsername'),
       adminPassword: document.getElementById('adminPassword'),
       adminLoginBtn: document.getElementById('adminLoginBtn'),
-      adminLoginStatus: document.getElementById('adminLoginStatus')
+      adminLoginStatus: document.getElementById('adminLoginStatus'),
+      jokeBtn: document.getElementById('jokeBtn'),
+      jokePopup: document.getElementById('jokePopup'),
+      jokeText: document.getElementById('jokeText'),
+      jokeSubtitle: document.getElementById('jokeSubtitle')
     };
 
     let currentPage = 0;
@@ -1191,6 +1195,8 @@
       el.libraryCopy.textContent = merged.libraryCopy;
       el.patchNotesContent.textContent = merged.patchNotes;
       el.patchNotesUpdated.textContent = merged.patchNotesUpdated;
+      if (el.jokeText) el.jokeText.textContent = merged.jokeOfTheDay || DEFAULTS.jokeOfTheDay;
+      if (el.jokeSubtitle) el.jokeSubtitle.textContent = merged.jokeUpdated || DEFAULTS.jokeUpdated;
       if (merged.announcementEnabled && merged.announcementText) {
         el.announcementBar.style.display = 'block';
         el.announcementBar.textContent = merged.announcementText;
@@ -1252,6 +1258,27 @@
       onValue(settingsRef, (snap) => applySettings(snap.exists() ? snap.val() : DEFAULTS));
       onValue(gamesRef, (snap) => renderPages(snap.exists() ? snap.val() : Object.fromEntries(DEFAULT_GAMES.map((g) => [g.id, g]))));
     });
-  </script>
+  
+if (el.jokeBtn) {
+  el.jokeBtn.addEventListener("click", () => {
+    el.jokePopup.style.display = "flex";
+  });
+}
+if (el.jokePopup) {
+  el.jokePopup.addEventListener("click", (event) => {
+    if (event.target === el.jokePopup) el.jokePopup.style.display = "none";
+  });
+}
+
+</script>
+
+<div id="jokePopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:999;">
+  <div style="background:#111827;padding:20px;border-radius:20px;max-width:420px;width:90%;text-align:center;border:1px solid rgba(255,255,255,0.1);box-shadow:0 20px 60px rgba(0,0,0,0.34);">
+    <h2 style="margin:0 0 8px;">😂 joke of the day</h2>
+    <p id="jokeSubtitle" style="margin:0 0 14px;color:#a5b4cc;">fresh from the admin panel.</p>
+    <p id="jokeText" style="margin:0 0 18px;">No joke set yet.</p>
+    <button onclick="document.getElementById('jokePopup').style.display='none'" class="chip-btn">close</button>
+  </div>
+</div>
 </body>
 </html>
