@@ -448,6 +448,27 @@
     }
 
 
+
+    .safety-note {
+      margin-bottom: 22px;
+      padding: 16px 18px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #dbeafe;
+      line-height: 1.6;
+      font-weight: 600;
+    }
+
+    .source-note {
+      margin-top: 8px;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      color: rgba(0,0,0,0.6);
+      font-weight: 700;
+    }
+
+    .light-text .source-note { color: rgba(248,250,252,0.78); }
     .announcement-bar {
       display: none;
       margin-bottom: 22px;
@@ -601,21 +622,22 @@
 
           <div class="hero-stats">
             <div class="stat-card">
-              <div class="stat-label">games/apps</div>
+              <div class="stat-label">Games</div>
               <div class="stat-value" id="gamesCount">0</div>
-              <div class="stat-note">more will always be added!</div>
+              <div class="stat-note">live from firebase</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">pages</div>
               <div class="stat-value" id="pagesCount">0</div>
-              <div class="stat-note">pages of games</div>
+              <div class="stat-note">auto-built by your game list</div>
             </div>
           </div>
         </div>
-      <button id="jokeBtn" class="chip-btn">joke of the day</button></header>
+      </header>
 
       <main class="content">
         <div class="announcement-bar" id="announcementBar"></div>
+        <div class="safety-note">External games/apps are clearly labeled before launch. This site may open or embed content from third-party providers and does not ask for passwords or payment information.</div>
 
         <div class="section-head">
           <div>
@@ -688,7 +710,9 @@
       announcementText: '',
       siteMode: 'normal',
       patchNotes: 'No patch notes yet.',
-      patchNotesUpdated: 'latest homepage updates and changes.'
+      patchNotesUpdated: 'latest homepage updates and changes.',
+      jokeOfTheDay: 'No joke set yet.',
+      jokeUpdated: 'fresh from the admin panel.'
     };
 
     const DEFAULT_GAMES = [
@@ -1085,11 +1109,7 @@
       adminUsername: document.getElementById('adminUsername'),
       adminPassword: document.getElementById('adminPassword'),
       adminLoginBtn: document.getElementById('adminLoginBtn'),
-      adminLoginStatus: document.getElementById('adminLoginStatus'),
-      jokeBtn: document.getElementById('jokeBtn'),
-      jokePopup: document.getElementById('jokePopup'),
-      jokeText: document.getElementById('jokeText'),
-      jokeSubtitle: document.getElementById('jokeSubtitle')
+      adminLoginStatus: document.getElementById('adminLoginStatus')
     };
 
     let currentPage = 0;
@@ -1105,6 +1125,20 @@
       return escapeHtml(game.thumbText || game.title?.[0] || '?');
     }
 
+
+    function isExternalUrl(value='') {
+      return /^https?:\/\//i.test(String(value || '').trim());
+    }
+
+    function getHostLabel(value='') {
+      try {
+        const url = new URL(value, window.location.href);
+        return url.host || 'external website';
+      } catch {
+        return 'external website';
+      }
+    }
+
     function buildTextStyle(game) {
       if (!game || !game.textColor) return '';
       const value = escapeHtml(game.textColor);
@@ -1112,17 +1146,20 @@
     }
 
     function buildCard(game) {
+      const launchUrl = game.sourceUrl || game.embedUrl || '#';
       const href = game.locked
         ? 'construction.html'
         : (game.openMode === 'redirect'
-            ? (game.sourceUrl || game.embedUrl || '#')
+            ? launchUrl
             : `game.html?id=${encodeURIComponent(game.id)}`);
       const classes = ['card'];
       if (game.themeClass) classes.push(...String(game.themeClass).split(/\s+/).filter(Boolean));
       if (!game.themeClass) classes.push('custom-card');
       const style = game.cardStyle ? ` style="${escapeHtml(game.cardStyle)}"` : '';
+      const external = isExternalUrl(launchUrl);
+      const hostNote = external ? `<div class="source-note">hosted by ${escapeHtml(getHostLabel(launchUrl))}</div>` : `<div class="source-note">opens on this site</div>`;
       return `
-        <a class="${classes.join(' ')}" href="${escapeHtml(href)}" data-game-id="${escapeHtml(game.id)}" aria-label="${escapeHtml(game.title)}"${game.openMode === 'redirect' && !game.locked ? ' rel="noopener noreferrer"' : ''}${style}>
+        <a class="${classes.join(' ')}" href="${escapeHtml(href)}" data-game-id="${escapeHtml(game.id)}" data-launch-url="${escapeHtml(launchUrl)}" data-open-mode="${escapeHtml(game.openMode || 'embed')}" data-external="${external ? 'true' : 'false'}" aria-label="${escapeHtml(game.title)}"${game.openMode === 'redirect' && !game.locked ? ' rel="noopener noreferrer nofollow"' : ''}${style}>
           <div class="card-top">
             <div class="thumb">${buildThumb(game)}</div>
             <div class="game-tag">${escapeHtml(game.tag || game.type || 'game')}</div>
@@ -1130,29 +1167,14 @@
           <div class="card-bottom">
             <div class="label"${buildTextStyle(game)}>${escapeHtml(game.title)}</div>
             <div class="desc"${buildTextStyle(game)}>${escapeHtml(game.description || '')}</div>
+            ${hostNote}
           </div>
         </a>`;
     }
 
-    function isValidGameRecord(game) {
-      return !!(
-        game &&
-        typeof game === 'object' &&
-        !game.hidden &&
-        typeof game.id === 'string' &&
-        game.id.trim() &&
-        typeof game.title === 'string' &&
-        game.title.trim() &&
-        (
-          (typeof game.embedUrl === 'string' && game.embedUrl.trim()) ||
-          (typeof game.sourceUrl === 'string' && game.sourceUrl.trim())
-        )
-      );
-    }
-
     function renderPages(gamesObj) {
       const games = Object.values(gamesObj || {})
-        .filter(isValidGameRecord)
+        .filter((game) => game && !game.hidden)
         .sort((a, b) => {
           const orderA = Number.isFinite(Number(a.order)) ? Number(a.order) : Number.MAX_SAFE_INTEGER;
           const orderB = Number.isFinite(Number(b.order)) ? Number(b.order) : Number.MAX_SAFE_INTEGER;
@@ -1218,26 +1240,63 @@
     function openModal(modal) { modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); }
     function closeModal(modal) { modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
 
-    el.patchNotesBtn.addEventListener('click', (event) => {
-      if (event.shiftKey) {
-        openModal(el.adminLoginModal);
-        return;
-      }
+    el.patchNotesBtn.addEventListener('click', () => {
       openModal(el.patchModal);
     });
     el.closePatchNotesBtn.addEventListener('click', ()=>closeModal(el.patchModal));
     el.closeAdminLoginBtn.addEventListener('click', ()=>closeModal(el.adminLoginModal));
     el.patchModal.addEventListener('click', (e)=>{ if(e.target===el.patchModal) closeModal(el.patchModal); });
     el.adminLoginModal.addEventListener('click', (e)=>{ if(e.target===el.adminLoginModal) closeModal(el.adminLoginModal); });
-    el.adminLoginBtn.addEventListener('click', () => {
-      const username = el.adminUsername.value.trim();
-      const password = el.adminPassword.value;
-      const ok = LOGIN_COMBOS.some((combo) => combo.username === username && combo.password === password);
-      if (ok) {
-        el.adminLoginStatus.textContent = 'success';
-        window.location.href = 'admin.html';
-      } else {
-        el.adminLoginStatus.textContent = 'wrong username or password';
+    if (el.adminLoginBtn) {
+      el.adminLoginBtn.addEventListener('click', () => {
+        el.adminLoginStatus.textContent = 'admin access is no longer available from the homepage.';
+      });
+    }
+
+
+    let pendingExternalUrl = '';
+
+    function closeExternalModal() {
+      if (!el.externalModal) return;
+      el.externalModal.classList.remove('open');
+      el.externalModal.setAttribute('aria-hidden', 'true');
+      pendingExternalUrl = '';
+    }
+
+    function openExternalModal(url='') {
+      pendingExternalUrl = url;
+      if (el.externalHostText) {
+        el.externalHostText.textContent = `${getHostLabel(url)} — ${url}`;
+      }
+      if (el.externalModal) {
+        el.externalModal.classList.add('open');
+        el.externalModal.setAttribute('aria-hidden', 'false');
+      }
+    }
+
+    if (el.closeExternalModalBtn) el.closeExternalModalBtn.addEventListener('click', closeExternalModal);
+    if (el.cancelExternalBtn) el.cancelExternalBtn.addEventListener('click', closeExternalModal);
+    if (el.continueExternalBtn) {
+      el.continueExternalBtn.addEventListener('click', () => {
+        if (!pendingExternalUrl) return;
+        window.location.href = pendingExternalUrl;
+      });
+    }
+    if (el.externalModal) {
+      el.externalModal.addEventListener('click', (event) => {
+        if (event.target === el.externalModal) closeExternalModal();
+      });
+    }
+
+    el.pagesContainer.addEventListener('click', (event) => {
+      const link = event.target.closest('a.card');
+      if (!link) return;
+      const external = link.dataset.external === 'true';
+      const openMode = link.dataset.openMode || 'embed';
+      const url = link.dataset.launchUrl || link.href;
+      if (external && openMode === 'redirect') {
+        event.preventDefault();
+        openExternalModal(url);
       }
     });
 
@@ -1258,27 +1317,25 @@
       onValue(settingsRef, (snap) => applySettings(snap.exists() ? snap.val() : DEFAULTS));
       onValue(gamesRef, (snap) => renderPages(snap.exists() ? snap.val() : Object.fromEntries(DEFAULT_GAMES.map((g) => [g.id, g]))));
     });
-  
-if (el.jokeBtn) {
-  el.jokeBtn.addEventListener("click", () => {
-    el.jokePopup.style.display = "flex";
-  });
-}
-if (el.jokePopup) {
-  el.jokePopup.addEventListener("click", (event) => {
-    if (event.target === el.jokePopup) el.jokePopup.style.display = "none";
-  });
-}
+  </script>
 
-</script>
-
-<div id="jokePopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:999;">
-  <div style="background:#111827;padding:20px;border-radius:20px;max-width:420px;width:90%;text-align:center;border:1px solid rgba(255,255,255,0.1);box-shadow:0 20px 60px rgba(0,0,0,0.34);">
-    <h2 style="margin:0 0 8px;">😂 joke of the day</h2>
-    <p id="jokeSubtitle" style="margin:0 0 14px;color:#a5b4cc;">fresh from the admin panel.</p>
-    <p id="jokeText" style="margin:0 0 18px;">No joke set yet.</p>
-    <button onclick="document.getElementById('jokePopup').style.display='none'" class="chip-btn">close</button>
+  <div class="modal-overlay" id="externalModal" aria-hidden="true">
+    <div class="modal-card" style="width:min(560px,100%);">
+      <div class="modal-top">
+        <h2 class="modal-title">leaving fun and games</h2>
+        <button class="chip-btn" id="closeExternalModalBtn" type="button">close</button>
+      </div>
+      <p class="modal-copy">This game or app is hosted by an external website.</p>
+      <div class="patch-notes-body" style="margin-bottom:16px;">
+        <div style="font-weight:800; margin-bottom:8px;">Destination</div>
+        <div id="externalHostText" style="word-break:break-word;"></div>
+      </div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="chip-btn chatbox" id="continueExternalBtn" type="button">continue to external site</button>
+        <button class="chip-btn" id="cancelExternalBtn" type="button">cancel</button>
+      </div>
+    </div>
   </div>
-</div>
+
 </body>
 </html>

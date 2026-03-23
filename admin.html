@@ -2,6 +2,7 @@
 <html lang="en"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>fun and games admin</title>
 <style>
     * { box-sizing: border-box; }
@@ -493,8 +494,6 @@
               <div class="field"><label for="libraryCopy">library section description</label><input id="libraryCopy" type="text"></div>
               <div class="field"><label for="siteMode">site mode</label><select id="siteMode"><option value="normal">normal</option><option value="maintenance">maintenance banner only</option></select></div>
               <div class="field"><label for="patchNotesUpdatedInput">patch notes subtitle</label><input id="patchNotesUpdatedInput" type="text"></div>
-              <div class="field"><label for="jokeOfTheDayInput">joke of the day</label><textarea id="jokeOfTheDayInput"></textarea></div>
-              <div class="field"><label for="jokeUpdatedInput">joke subtitle</label><input id="jokeUpdatedInput" type="text"></div>
               <div class="field"><label for="patchNotesInput">patch notes body</label><textarea id="patchNotesInput"></textarea></div>
             </div>
             <div class="actions-row">
@@ -506,7 +505,7 @@
 
           <section class="panel">
             <h3>game editor</h3>
-            <p>Add new games/apps or edit existing ones. These show up on both the homepage and the universal <strong>game.html</strong> page.</p>
+            <p>Add new games/apps or edit existing ones. These show up on both the homepage and the universal <strong>game.html</strong> page.</p><p class="mini">For safety, external links must use <strong>https://</strong>. JavaScript, data, blob, and file URLs are blocked. External redirects are labeled clearly on the homepage.</p>
             <div class="field-grid">
               <div class="field"><label for="gameId">id / slug</label><input id="gameId" type="text" placeholder="ragdoll-hit"></div>
               <div class="field"><label for="gameTitle">title</label><input id="gameTitle" type="text"></div>
@@ -569,7 +568,7 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
     import { getDatabase, ref, get, set, update, remove } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js';
     const firebaseConfig = { apiKey:'AIzaSyDvKpZacWOgca6PtoA6wP2QFX3JbI-Dvw4', authDomain:'funandgames-4e8c1.firebaseapp.com', databaseURL:'https://funandgames-4e8c1-default-rtdb.firebaseio.com', projectId:'funandgames-4e8c1', storageBucket:'funandgames-4e8c1.firebasestorage.app', messagingSenderId:'240713956788', appId:'1:240713956788:web:37b64a7a534f1e2bea06e1', measurementId:'G-KLSV3Q73MR' };
-    const DEFAULTS = { heroSubtitle:'a game website to just generally have fun!', libraryTitle:'library', libraryCopy:'Pick a game or tool below to launch it instantly.', announcementEnabled:false, announcementText:'', siteMode:'normal', patchNotes:'No patch notes yet.', patchNotesUpdated:'latest homepage updates and changes.', jokeOfTheDay:'No joke set yet.', jokeUpdated:'fresh from the admin panel.' };
+    const DEFAULTS = { heroSubtitle:'a game website to just generally have fun!', libraryTitle:'library', libraryCopy:'Pick a game or tool below to launch it instantly.', announcementEnabled:false, announcementText:'', siteMode:'normal', patchNotes:'No patch notes yet.', patchNotesUpdated:'latest homepage updates and changes.' };
     const DEFAULT_GAMES = [
   {
     "id": "duckmath",
@@ -937,7 +936,7 @@
     const settingsRef = ref(db, 'homepageAdmin/settings');
     const gamesRef = ref(db, 'homepageAdmin/games');
     const el = {
-      heroSubtitle: document.getElementById('heroSubtitle'), announcementText: document.getElementById('announcementText'), announcementEnabled: document.getElementById('announcementEnabled'), libraryTitle: document.getElementById('libraryTitle'), libraryCopy: document.getElementById('libraryCopy'), siteMode: document.getElementById('siteMode'), patchNotesInput: document.getElementById('patchNotesInput'), patchNotesUpdatedInput: document.getElementById('patchNotesUpdatedInput'), jokeOfTheDayInput: document.getElementById('jokeOfTheDayInput'), jokeUpdatedInput: document.getElementById('jokeUpdatedInput'), saveGlobalBtn: document.getElementById('saveGlobalBtn'), resetGlobalBtn: document.getElementById('resetGlobalBtn'), refreshBtn: document.getElementById('refreshBtn'), saveStatus: document.getElementById('saveStatus'), gamesList: document.getElementById('gamesList'), gameCount: document.getElementById('gameCount'), firebaseState: document.getElementById('firebaseState'), announcePreview: document.getElementById('announcePreview'), patchNotesBtn: document.getElementById('patchNotesBtn'), patchModal: document.getElementById('patchModal'), closePatchNotesBtn: document.getElementById('closePatchNotesBtn'), patchNotesContent: document.getElementById('patchNotesContent'), patchNotesUpdated: document.getElementById('patchNotesUpdated'),
+      heroSubtitle: document.getElementById('heroSubtitle'), announcementText: document.getElementById('announcementText'), announcementEnabled: document.getElementById('announcementEnabled'), libraryTitle: document.getElementById('libraryTitle'), libraryCopy: document.getElementById('libraryCopy'), siteMode: document.getElementById('siteMode'), patchNotesInput: document.getElementById('patchNotesInput'), patchNotesUpdatedInput: document.getElementById('patchNotesUpdatedInput'), saveGlobalBtn: document.getElementById('saveGlobalBtn'), resetGlobalBtn: document.getElementById('resetGlobalBtn'), refreshBtn: document.getElementById('refreshBtn'), saveStatus: document.getElementById('saveStatus'), gamesList: document.getElementById('gamesList'), gameCount: document.getElementById('gameCount'), firebaseState: document.getElementById('firebaseState'), announcePreview: document.getElementById('announcePreview'), patchNotesBtn: document.getElementById('patchNotesBtn'), patchModal: document.getElementById('patchModal'), closePatchNotesBtn: document.getElementById('closePatchNotesBtn'), patchNotesContent: document.getElementById('patchNotesContent'), patchNotesUpdated: document.getElementById('patchNotesUpdated'),
       gameId: document.getElementById('gameId'), gameTitle: document.getElementById('gameTitle'), gameDescription: document.getElementById('gameDescription'), gameEmbedUrl: document.getElementById('gameEmbedUrl'), gameSourceUrl: document.getElementById('gameSourceUrl'), gameThumbnailUrl: document.getElementById('gameThumbnailUrl'), gameThumbText: document.getElementById('gameThumbText'), gameTag: document.getElementById('gameTag'), gameType: document.getElementById('gameType'), gamePage: document.getElementById('gamePage'), gameOrder: document.getElementById('gameOrder'), gameThemeClass: document.getElementById('gameThemeClass'), gameCardStyle: document.getElementById('gameCardStyle'), gameTextColor: document.getElementById('gameTextColor'), gamePlatform: document.getElementById('gamePlatform'), gameStatusText: document.getElementById('gameStatusText'), gameAddedText: document.getElementById('gameAddedText'), gameCredits: document.getElementById('gameCredits'), gameSourceLabel: document.getElementById('gameSourceLabel'), gameOpenMode: document.getElementById('gameOpenMode'), gameHidden: document.getElementById('gameHidden'), gameLocked: document.getElementById('gameLocked'), saveGameBtn: document.getElementById('saveGameBtn'), newGameBtn: document.getElementById('newGameBtn'), seedDefaultsBtn: document.getElementById('seedDefaultsBtn'), editorStatus: document.getElementById('editorStatus')
     };
     let currentGameStates = {};
@@ -945,6 +944,19 @@
     function setStatus(text) { el.saveStatus.textContent = text; }
     function setEditorStatus(text) { el.editorStatus.textContent = text; }
     function slugify(s) { return String(s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+
+    function isSafeUrl(value='') {
+      const v = String(value || '').trim();
+      if (!v) return true;
+      if (/^(javascript|data|vbscript|file|blob):/i.test(v)) return false;
+      if (/^https:\/\//i.test(v)) return true;
+      return /^[a-z0-9_./?#=&%-]+$/i.test(v) && !/^\/\//.test(v);
+    }
+
+    function validateGameUrls(game) {
+      return isSafeUrl(game.embedUrl) && isSafeUrl(game.sourceUrl);
+    }
+
     function updatePreview() {
       const enabled = el.announcementEnabled.value === 'true';
       const text = el.announcementText.value.trim();
@@ -952,21 +964,75 @@
       el.patchNotesUpdated.textContent = el.patchNotesUpdatedInput.value.trim() || DEFAULTS.patchNotesUpdated;
       if (enabled && text) { el.announcePreview.style.display='block'; el.announcePreview.textContent=text; } else { el.announcePreview.style.display='none'; el.announcePreview.textContent=''; }
     }
-    function fillGlobalForm(settings={}) { const m={...DEFAULTS,...settings}; el.heroSubtitle.value=m.heroSubtitle; el.announcementText.value=m.announcementText; el.announcementEnabled.value=String(Boolean(m.announcementEnabled)); el.libraryTitle.value=m.libraryTitle; el.libraryCopy.value=m.libraryCopy; el.siteMode.value=m.siteMode||'normal'; el.patchNotesInput.value=m.patchNotes||DEFAULTS.patchNotes; el.patchNotesUpdatedInput.value=m.patchNotesUpdated||DEFAULTS.patchNotesUpdated; el.jokeOfTheDayInput.value=m.jokeOfTheDay||DEFAULTS.jokeOfTheDay; el.jokeUpdatedInput.value=m.jokeUpdated||DEFAULTS.jokeUpdated; updatePreview(); }
+    function fillGlobalForm(settings={}) { const m={...DEFAULTS,...settings}; el.heroSubtitle.value=m.heroSubtitle; el.announcementText.value=m.announcementText; el.announcementEnabled.value=String(Boolean(m.announcementEnabled)); el.libraryTitle.value=m.libraryTitle; el.libraryCopy.value=m.libraryCopy; el.siteMode.value=m.siteMode||'normal'; el.patchNotesInput.value=m.patchNotes||DEFAULTS.patchNotes; el.patchNotesUpdatedInput.value=m.patchNotesUpdated||DEFAULTS.patchNotesUpdated; updatePreview(); }
     function blankGame() { return { id:'', title:'', description:'', embedUrl:'', sourceUrl:'', thumbnailUrl:'', thumbText:'', tag:'game', type:'game', page:1, order:Object.keys(currentGameStates).length+1, themeClass:'custom-card', cardStyle:'', textColor:'', platform:'browser', statusText:'live', addedText:'new', credits:'original creators', sourceLabel:'launch url', openMode:'embed', hidden:false, locked:false }; }
     function fillGameForm(game={}) { const g={...blankGame(),...game}; el.gameId.value=g.id||''; el.gameTitle.value=g.title||''; el.gameDescription.value=g.description||''; el.gameEmbedUrl.value=g.embedUrl||''; el.gameSourceUrl.value=g.sourceUrl||''; el.gameThumbnailUrl.value=g.thumbnailUrl||''; el.gameThumbText.value=g.thumbText||''; el.gameTag.value=g.tag||''; el.gameType.value=g.type||'game'; el.gamePage.value=g.page||1; el.gameOrder.value=g.order||1; el.gameThemeClass.value=g.themeClass||''; el.gameCardStyle.value=g.cardStyle||''; el.gameTextColor.value=g.textColor||''; el.gamePlatform.value=g.platform||''; el.gameStatusText.value=g.statusText||''; el.gameAddedText.value=g.addedText||''; el.gameCredits.value=g.credits||''; el.gameSourceLabel.value=g.sourceLabel||''; el.gameOpenMode.value=g.openMode||'embed'; el.gameHidden.value=String(Boolean(g.hidden)); el.gameLocked.value=String(Boolean(g.locked)); }
     function collectGameForm() { const title=el.gameTitle.value.trim(); const id = slugify(el.gameId.value) || slugify(title); return { id, title, description:el.gameDescription.value.trim(), embedUrl:el.gameEmbedUrl.value.trim(), sourceUrl:el.gameSourceUrl.value.trim() || el.gameEmbedUrl.value.trim(), thumbnailUrl:el.gameThumbnailUrl.value.trim(), thumbText:el.gameThumbText.value.trim(), tag:el.gameTag.value.trim() || el.gameType.value, type:el.gameType.value, page:Number(el.gamePage.value||1), order:Number(el.gameOrder.value||1), themeClass:el.gameThemeClass.value.trim() || 'custom-card', cardStyle:el.gameCardStyle.value.trim(), textColor:el.gameTextColor.value.trim(), platform:el.gamePlatform.value.trim() || 'browser', statusText:el.gameStatusText.value.trim() || 'live', addedText:el.gameAddedText.value.trim() || 'new', credits:el.gameCredits.value.trim() || 'original creators', sourceLabel:el.gameSourceLabel.value.trim() || 'launch url', openMode:el.gameOpenMode.value, hidden:el.gameHidden.value==='true', locked:el.gameLocked.value==='true' }; }
-    function renderGamesList() { const games=Object.values(currentGameStates).sort((a,b)=>(Number(a.page||1)-Number(b.page||1))||(Number(a.order||0)-Number(b.order||0))||String(a.title).localeCompare(String(b.title))); el.gameCount.textContent=String(games.length); el.gamesList.innerHTML=''; games.forEach((game)=>{ const row=document.createElement('div'); row.className='game-row'; row.innerHTML=`<div class="game-head"><div><div class="game-title">${game.title}</div><div class="game-meta">id: ${game.id} · page ${game.page} · ${game.type}<br>${game.embedUrl||''}<br>${game.description||''}</div></div><div class="state-pills"><span class="pill ${game.hidden?'hidden':'live'}">${game.hidden?'hidden':'visible'}</span><span class="pill ${game.locked?'locked':'live'}">${game.locked?'locked':'unlocked'}</span></div></div><div class="row-actions"><button class="chip-btn primary" data-action="edit" data-id="${game.id}" type="button">edit</button><button class="chip-btn danger" data-action="hide" data-id="${game.id}" type="button">hide</button><button class="chip-btn good" data-action="unhide" data-id="${game.id}" type="button">undo hide</button><button class="chip-btn warn" data-action="lock" data-id="${game.id}" type="button">lock</button><button class="chip-btn good" data-action="unlock" data-id="${game.id}" type="button">undo lock</button><button class="chip-btn soft" data-action="delete" data-id="${game.id}" type="button">delete</button></div>`; el.gamesList.appendChild(row); }); }
+    function isValidGameRecord(game) {
+      return !!(
+        game &&
+        typeof game === 'object' &&
+        typeof game.id === 'string' &&
+        game.id.trim() &&
+        typeof game.title === 'string' &&
+        game.title.trim() &&
+        (
+          (typeof game.embedUrl === 'string' && game.embedUrl.trim()) ||
+          (typeof game.sourceUrl === 'string' && game.sourceUrl.trim())
+        )
+      );
+    }
+    function getRenderableGames() {
+      return Object.values(currentGameStates || {}).filter(isValidGameRecord);
+    }
+    async function cleanupBrokenEntries() {
+      const entries = Object.entries(currentGameStates || {});
+      const badKeys = entries
+        .filter(([key, game]) => !isValidGameRecord(game) || key !== game.id)
+        .map(([key]) => key);
+
+      if (!badKeys.length) return 0;
+
+      await Promise.all(badKeys.map((key) => remove(ref(db, `homepageAdmin/games/${key}`))));
+      badKeys.forEach((key) => { delete currentGameStates[key]; });
+      return badKeys.length;
+    }
+    function renderGamesList() {
+      const games=getRenderableGames().sort((a,b)=>(Number(a.page||1)-Number(b.page||1))||(Number(a.order||0)-Number(b.order||0))||String(a.title).localeCompare(String(b.title)));
+      el.gameCount.textContent=String(games.length);
+      el.gamesList.innerHTML='';
+      games.forEach((game)=>{
+        const row=document.createElement('div');
+        row.className='game-row';
+        row.innerHTML=`<div class="game-head"><div><div class="game-title">${game.title}</div><div class="game-meta">id: ${game.id} · page ${game.page} · ${game.type}<br>${game.embedUrl||game.sourceUrl||''}<br>${game.description||''}</div></div><div class="state-pills"><span class="pill ${game.hidden?'hidden':'live'}">${game.hidden?'hidden':'visible'}</span><span class="pill ${game.locked?'locked':'live'}">${game.locked?'locked':'unlocked'}</span></div></div><div class="row-actions"><button class="chip-btn primary" data-action="edit" data-id="${game.id}" type="button">edit</button><button class="chip-btn danger" data-action="hide" data-id="${game.id}" type="button">hide</button><button class="chip-btn good" data-action="unhide" data-id="${game.id}" type="button">undo hide</button><button class="chip-btn warn" data-action="lock" data-id="${game.id}" type="button">lock</button><button class="chip-btn good" data-action="unlock" data-id="${game.id}" type="button">undo lock</button><button class="chip-btn soft" data-action="delete" data-id="${game.id}" type="button">delete</button></div>`;
+        el.gamesList.appendChild(row);
+      });
+    }
     async function saveGameState(id, patch) { const next={ ...(currentGameStates[id]||blankGame()), ...patch, id }; await set(ref(db, `homepageAdmin/games/${id}`), next); currentGameStates[id]=next; renderGamesList(); setStatus(`saved ${id}`); }
-    async function loadAll() { try { el.firebaseState.textContent='loading'; const [settingsSnap,gamesSnap]=await Promise.all([get(settingsRef),get(gamesRef)]); fillGlobalForm(settingsSnap.exists()?settingsSnap.val():DEFAULTS); currentGameStates=gamesSnap.exists()?gamesSnap.val():{}; renderGamesList(); el.firebaseState.textContent='connected'; setStatus('firebase data loaded'); } catch(error) { console.error(error); el.firebaseState.textContent='error'; setStatus('could not load firebase data'); } }
+    async function loadAll() {
+      try {
+        el.firebaseState.textContent='loading';
+        const [settingsSnap,gamesSnap]=await Promise.all([get(settingsRef),get(gamesRef)]);
+        fillGlobalForm(settingsSnap.exists()?settingsSnap.val():DEFAULTS);
+        currentGameStates=gamesSnap.exists()?gamesSnap.val():{};
+        const removedCount = await cleanupBrokenEntries();
+        renderGamesList();
+        el.firebaseState.textContent='connected';
+        setStatus(removedCount ? `firebase data loaded — removed ${removedCount} broken entr${removedCount===1?'y':'ies'}` : 'firebase data loaded');
+      } catch(error) {
+        console.error(error);
+        el.firebaseState.textContent='error';
+        setStatus('could not load firebase data');
+      }
+    }
     async function ensureDefaults() { const snap=await get(gamesRef); if (!snap.exists()) await set(gamesRef, Object.fromEntries(DEFAULT_GAMES.map(g=>[g.id,g]))); const settingsSnap=await get(settingsRef); if(!settingsSnap.exists()) await set(settingsRef, DEFAULTS); }
-    el.saveGlobalBtn.addEventListener('click', async ()=>{ const payload={ heroSubtitle:el.heroSubtitle.value.trim()||DEFAULTS.heroSubtitle, announcementText:el.announcementText.value.trim(), announcementEnabled:el.announcementEnabled.value==='true', libraryTitle:el.libraryTitle.value.trim()||DEFAULTS.libraryTitle, libraryCopy:el.libraryCopy.value.trim()||DEFAULTS.libraryCopy, siteMode:el.siteMode.value||'normal', patchNotes:el.patchNotesInput.value.trim()||DEFAULTS.patchNotes, patchNotesUpdated:el.patchNotesUpdatedInput.value.trim()||DEFAULTS.patchNotesUpdated, jokeOfTheDay:el.jokeOfTheDayInput.value.trim()||DEFAULTS.jokeOfTheDay, jokeUpdated:el.jokeUpdatedInput.value.trim()||DEFAULTS.jokeUpdated }; try { await set(settingsRef,payload); setStatus('global settings saved'); updatePreview(); } catch(error) { console.error(error); setStatus('could not save global settings'); } });
+    el.saveGlobalBtn.addEventListener('click', async ()=>{ const payload={ heroSubtitle:el.heroSubtitle.value.trim()||DEFAULTS.heroSubtitle, announcementText:el.announcementText.value.trim(), announcementEnabled:el.announcementEnabled.value==='true', libraryTitle:el.libraryTitle.value.trim()||DEFAULTS.libraryTitle, libraryCopy:el.libraryCopy.value.trim()||DEFAULTS.libraryCopy, siteMode:el.siteMode.value||'normal', patchNotes:el.patchNotesInput.value.trim()||DEFAULTS.patchNotes, patchNotesUpdated:el.patchNotesUpdatedInput.value.trim()||DEFAULTS.patchNotesUpdated }; try { await set(settingsRef,payload); setStatus('global settings saved'); updatePreview(); } catch(error) { console.error(error); setStatus('could not save global settings'); } });
     el.resetGlobalBtn.addEventListener('click', ()=>{ fillGlobalForm(DEFAULTS); setStatus('form reset to defaults — click save to publish'); });
-    el.saveGameBtn.addEventListener('click', async ()=>{ const game=collectGameForm(); if(!game.id || !game.title || !game.embedUrl) { setEditorStatus('id, title, and embed or launch url are required'); return; } try { await set(ref(db, `homepageAdmin/games/${game.id}`), game); currentGameStates[game.id]=game; renderGamesList(); setEditorStatus(`saved ${game.title}`); fillGameForm(game); } catch(error) { console.error(error); setEditorStatus('could not save game'); } });
+    el.saveGameBtn.addEventListener('click', async ()=>{ const game=collectGameForm(); if(!game.id || !game.title || !game.embedUrl) { setEditorStatus('id, title, and embed or launch url are required'); return; } if(!validateGameUrls(game)) { setEditorStatus('only https external links or local relative paths are allowed'); return; } try { await set(ref(db, `homepageAdmin/games/${game.id}`), game); currentGameStates[game.id]=game; renderGamesList(); setEditorStatus(`saved ${game.title}`); fillGameForm(game); } catch(error) { console.error(error); setEditorStatus('could not save game'); } });
     el.newGameBtn.addEventListener('click', ()=>{ fillGameForm(blankGame()); setEditorStatus('blank form ready'); });
     el.seedDefaultsBtn.addEventListener('click', async ()=>{ try { await set(gamesRef, Object.fromEntries(DEFAULT_GAMES.map(g=>[g.id,g]))); setEditorStatus('default catalog restored'); loadAll(); } catch(error) { console.error(error); setEditorStatus('could not restore defaults'); } });
     el.refreshBtn.addEventListener('click', loadAll);
-    el.announcementText.addEventListener('input', updatePreview); el.announcementEnabled.addEventListener('change', updatePreview); el.patchNotesInput.addEventListener('input', updatePreview); el.patchNotesUpdatedInput.addEventListener('input', updatePreview); el.jokeOfTheDayInput.addEventListener('input', updatePreview); el.jokeUpdatedInput.addEventListener('input', updatePreview);
+    el.announcementText.addEventListener('input', updatePreview); el.announcementEnabled.addEventListener('change', updatePreview); el.patchNotesInput.addEventListener('input', updatePreview); el.patchNotesUpdatedInput.addEventListener('input', updatePreview);
     el.patchNotesBtn.addEventListener('click', ()=>{ el.patchModal.classList.add('open'); el.patchModal.setAttribute('aria-hidden','false'); updatePreview(); });
     el.closePatchNotesBtn.addEventListener('click', ()=>{ el.patchModal.classList.remove('open'); el.patchModal.setAttribute('aria-hidden','true'); });
     el.patchModal.addEventListener('click', (e)=>{ if(e.target===el.patchModal) { el.patchModal.classList.remove('open'); el.patchModal.setAttribute('aria-hidden','true'); } });
