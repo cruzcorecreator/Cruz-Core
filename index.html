@@ -2,7 +2,7 @@
 <html lang="en"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>fun and games</title>
+  <title>bible courses</title>
 <style>
     * { box-sizing: border-box; }
 
@@ -1109,7 +1109,12 @@
       adminUsername: document.getElementById('adminUsername'),
       adminPassword: document.getElementById('adminPassword'),
       adminLoginBtn: document.getElementById('adminLoginBtn'),
-      adminLoginStatus: document.getElementById('adminLoginStatus')
+      adminLoginStatus: document.getElementById('adminLoginStatus'),
+      externalModal: document.getElementById('externalModal'),
+      externalHostText: document.getElementById('externalHostText'),
+      closeExternalModalBtn: document.getElementById('closeExternalModalBtn'),
+      cancelExternalBtn: document.getElementById('cancelExternalBtn'),
+      continueExternalBtn: document.getElementById('continueExternalBtn')
     };
 
     let currentPage = 0;
@@ -1279,7 +1284,7 @@
     if (el.continueExternalBtn) {
       el.continueExternalBtn.addEventListener('click', () => {
         if (!pendingExternalUrl) return;
-        window.location.href = pendingExternalUrl;
+        window.open(pendingExternalUrl, "_blank", "noopener,noreferrer");
       });
     }
     if (el.externalModal) {
