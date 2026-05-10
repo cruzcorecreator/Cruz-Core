@@ -19,11 +19,11 @@
   function navItems(u){return nav.concat(canAdmin(u)?[['admin.html','🛡️','Admin Panel']]:[]).map(([href,icon,label])=>`<a class="nav-item ${page===href?'active':''}" href="${href}"><span>${icon}</span><span>${label}</span></a>`).join('')}
   function renderUserBits(){
     const u=window.FGUser||{};
-    const htmlTop=`${avatar(u)}<span><b>${esc(nameOf(u))} ${roleEmoji[u.role||u.rank||'member']||''}</b><small class="rank">${esc(u.role||u.rank||'member')}</small></span><span class="status-dot"></span>`;
+    const level=Number(u.level||0);const levelHtml=`<span class="top-level-pill">Lv ${level}</span>`;const display=`<span class="${rewardNameClass(u)}" ${rewardNameStyle(u)}>${esc(nameOf(u))}</span>`;const badges=rewardBadges(u);const htmlTop=`${avatar(u)}<span><b>${display} ${roleEmoji[u.role||u.rank||'member']||''} ${levelHtml} ${badges}</b><small class="rank">${esc(u.role||u.rank||'member')}</small></span><span class="status-dot"></span>`;
     const top=document.getElementById('shellTopUser');
     if(top) top.innerHTML=htmlTop;
     const side=document.getElementById('shellSideUser');
-    if(side) side.innerHTML=`${avatar(u)}<div><b>${esc(nameOf(u))} ${roleEmoji[u.role||u.rank||'member']||''}</b><span class="rank">${esc(u.role||u.rank||'member')}</span></div>`;
+    if(side) side.innerHTML=`${avatar(u)}<div><b>${display} ${roleEmoji[u.role||u.rank||'member']||''} ${levelHtml} ${badges}</b><span class="rank">${esc(u.role||u.rank||'member')}</span></div>`;
     // Update any older/reused profile UI pieces across pages.
     document.querySelectorAll('[data-current-user-avatar], .current-user-avatar, .my-avatar, #profileAvatarSmall, #topbarAvatar, #sidebarAvatar').forEach(el=>{
       el.innerHTML=avatar(u, el.classList.contains('big-avatar')?'big-avatar':'avatar');
@@ -140,11 +140,89 @@
     });
   }
 
+
+  
+  function getLevelRewards(level){
+    level=Number(level||0);
+    return {
+      activeMember: level>=5,
+      bannerColor: level>=8,
+      customNameColor: level>=10,
+      profileFrame: level>=12,
+      customStatus: level>=15,
+      biggerBio: level>=20,
+      glowName: level>=25,
+      animatedAvatarBorder: level>=30,
+      veteranTag: level>=35,
+      rareTheme: level>=40,
+      profileSpotlight: level>=45,
+      rainbowName: level>=50,
+      particleEffect: level>=60,
+      secretTheme: level>=75,
+      legendTag: level>=75,
+      goldProfile: level>=100
+    };
+  }
+  function rewardNameClass(u){
+    const lvl=Number(u?.level||0), rewards=getLevelRewards(lvl), username=String(u?.username||'').toLowerCase();
+    if(username==='cruz') return 'rgb-cruz-name';
+    if(rewards.rainbowName && u?.useRainbowName) return 'rainbow-name';
+    if(rewards.glowName && u?.useGlowName) return 'name-glow';
+    return '';
+  }
+  function rewardNameStyle(u){
+    const lvl=Number(u?.level||0), rewards=getLevelRewards(lvl), username=String(u?.username||'').toLowerCase();
+    if(username==='cruz') return '';
+    if(rewards.rainbowName && u?.useRainbowName) return '';
+    const color=String(u?.nameColor||'').trim();
+    return rewards.customNameColor && color ? `style="color:${esc(color)}"` : '';
+  }
+  function rewardBadges(u){
+    const custom=String(u?.customTag||'').trim().slice(0,18);
+    if(custom) return `<span class="custom-user-tag">${esc(custom).toUpperCase()}</span>`;
+    const lvl=Number(u?.level||0), r=getLevelRewards(lvl);
+    if(r.legendTag) return '<span class="legend-tag">LEGEND</span>';
+    if(r.veteranTag) return '<span class="veteran-tag">VETERAN</span>';
+    if(r.activeMember) return '<span class="active-member-tag">ACTIVE</span>';
+    return '';
+  }
+
+function startActiveLeveling(){
+    if(window.__fgActiveLevelingStarted) return;
+    const u=window.FGUser||{};
+    if(!u.uid || !window.FGAuth) return;
+    window.__fgActiveLevelingStarted=true;
+    let active=false,lastAction=0,activeSeconds=0;
+    const mark=()=>{active=true;lastAction=Date.now();};
+    ['keydown','mousedown','touchstart','click'].forEach(ev=>window.addEventListener(ev,mark,{passive:true}));
+    mark();
+    FGAuth.initFirebase().then(()=>{
+      const db=FGAuth.db();
+      setInterval(async()=>{
+        const now=Date.now();
+        if(now-lastAction<=5000){
+          activeSeconds+=3;
+          if(activeSeconds>=60){
+            activeSeconds=0;
+            const ref=db.ref('siteUsers/'+u.uid);
+            const snap=await ref.get().catch(()=>null);
+            if(!snap||!snap.exists())return;
+            const cur=snap.val()||{};
+            const total=Number(cur.activeSeconds||0)+60;
+            const level=Math.floor(total/120);
+            await ref.update({activeSeconds:total,level,lastActiveLevelTick:Date.now()});
+          }
+        }
+      },3000);
+    });
+  }
+
   function build(){
     listenStaffEvents();
+    startActiveLeveling();
     if(document.querySelector('.app')){renderUserBits();return;}
     const u=window.FGUser||{};
-    const app=document.createElement('div');app.className='app';app.innerHTML=`<aside class="side" id="uiSide"><div class="brand"><div class="logo">🎮</div><div><b>GameHub</b><span>Play. Connect. Win.</span></div></div><nav class="nav-block" id="shellNav"><div class="nav-title">Main</div>${navItems(u)}</nav><div class="side-card"><b>Online Now</b><p class="muted" id="sideOnline">loading...</p></div><a class="user-pill side-user-pill" id="shellSideUser" href="profile.html">${avatar(u)}<div><b>${esc(nameOf(u))} ${roleEmoji[u.role||u.rank||'member']||''}</b><span class="rank">${esc(u.role||u.rank||'member')}</span></div></a></aside><main class="main"><header class="topbar"><button class="icon-btn mobile-menu" id="menuBtn" type="button">☰</button><input class="search" id="globalSearch" placeholder="Search games, users, and more..."><div></div><div class="top-actions"><a class="icon-btn" href="users.html" title="users">👥</a><a class="icon-btn" href="chatbox.html" title="chat">💬</a><a class="icon-btn" href="messages.html" title="messages">✉️</a><button class="icon-btn" id="logoutBtn" type="button" title="Log out">Log out</button><a class="user-pill" id="shellTopUser" href="profile.html">${avatar(u)}<span><b>${esc(nameOf(u))} ${roleEmoji[u.role||u.rank||'member']||''}</b><small class="rank">${esc(u.role||u.rank||'member')}</small></span><span class="status-dot"></span></a></div></header><div id="pageMount"></div></main>`;
+    const app=document.createElement('div');app.className='app';app.innerHTML=`<aside class="side" id="uiSide"><div class="brand"><div class="logo">🎮</div><div><b>GameHub</b><span>Play. Connect. Win.</span></div></div><nav class="nav-block" id="shellNav"><div class="nav-title">Main</div>${navItems(u)}</nav><div class="side-card"><b>Online Now</b><p class="muted" id="sideOnline">loading...</p></div><a class="user-pill side-user-pill" id="shellSideUser" href="profile.html">${avatar(u)}<div><b><span class="${rewardNameClass(u)}" ${rewardNameStyle(u)}>${esc(nameOf(u))}</span> ${roleEmoji[u.role||u.rank||'member']||''} <span class="top-level-pill">Lv ${Number(u.level||0)}</span> ${rewardBadges(u)}</b><span class="rank">${esc(u.role||u.rank||'member')}</span></div></a></aside><main class="main"><header class="topbar"><button class="icon-btn mobile-menu" id="menuBtn" type="button">☰</button><input class="search" id="globalSearch" placeholder="Search games, users, and more..."><div></div><div class="top-actions"><a class="icon-btn" href="users.html" title="users">👥</a><a class="icon-btn" href="chatbox.html" title="chat">💬</a><a class="icon-btn" href="messages.html" title="messages">✉️</a><button class="icon-btn" id="logoutBtn" type="button" title="Log out">Log out</button><a class="user-pill" id="shellTopUser" href="profile.html">${avatar(u)}<span><b><span class="${rewardNameClass(u)}" ${rewardNameStyle(u)}>${esc(nameOf(u))}</span> ${roleEmoji[u.role||u.rank||'member']||''} <span class="top-level-pill">Lv ${Number(u.level||0)}</span> ${rewardBadges(u)}</b><small class="rank">${esc(u.role||u.rank||'member')}</small></span><span class="status-dot"></span></a></div></header><div id="pageMount"></div></main>`;
     document.body.prepend(app);
     const mount=document.getElementById('pageMount');
     [...document.body.children].filter(el=>el!==app&&el.id!=='fgSession'&&el.id!=='fgNotice'&&el.id!=='fgLoginWall'&&el.tagName!=='SCRIPT').forEach(el=>mount.appendChild(el));
@@ -154,5 +232,5 @@
   }
   document.addEventListener('fg-auth-ready',build,{once:true});
   document.addEventListener('fg-user-updated',()=>{renderUserBits();});
-  setTimeout(()=>{if(window.FGUser){listenStaffEvents();} if(window.FGUser&&!document.querySelector('.app'))build();else renderUserBits()},700);
+  setTimeout(()=>{if(window.FGUser){listenStaffEvents();startActiveLeveling();} if(window.FGUser&&!document.querySelector('.app'))build();else renderUserBits()},700);
 })();

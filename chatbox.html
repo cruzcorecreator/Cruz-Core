@@ -19,15 +19,98 @@
 const DB_ROOT='fun-and-games-chat';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-let db=null, users={}, presence={}, customCommands={}, me=null, loaded=false;
+let db=null, users={}, presence={}, customCommands={}, chatSettings={}, me=null, loaded=false; let lastChatSendAt=0;
 const roleEmoji=r=>({owner:'👑',tester:'🧪',admin:'🛡️',mod:'🔨',helper:'✨',banned:'🚫',member:''}[r]||'');
 function pickPhoto(u){return (window.FGAuth?.pickPhoto?.(u))||String(u?.photoURL||u?.pfp||u?.pfpUrl||u?.profilePic||u?.profilePicture||u?.profileImage||u?.avatar||u?.avatarUrl||u?.picture||u?.photo||u?.image||u?.icon||'').trim()}
 function displayName(u){return (u&&(u.name||u.displayName||u.username))||'user'}
 function mergedUser(uid, extra){const base=users[uid]||{};return {...base,...(extra||{}),uid,photoURL:pickPhoto(base)||pickPhoto(extra)}}
 function av(u){const img=pickPhoto(u);const uid=encodeURIComponent(u?.uid||'');const initial=esc(displayName(u).slice(0,1).toUpperCase());return img?`<a class="avatar" href="viewprofile.html?id=${uid}" title="view profile" data-initial="${initial}"><img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove();this.parentElement.textContent=this.parentElement.dataset.initial||'U';"></a>`:`<a class="avatar" href="viewprofile.html?id=${uid}" title="view profile">${initial}</a>`}
-function renderOne(m){const u=mergedUser(m.uid,m);const rank=u.role||u.rank||m.role||'member';return `<div class="msg" data-mid="${esc(m.id||'')}">${av(u)}<div class="msg-body"><a class="msg-name" href="viewprofile.html?id=${encodeURIComponent(m.uid||'')}">${esc(displayName(u))} ${roleEmoji(rank)} <span class="rank">${esc(rank)}</span></a><span class="msg-time">${m.createdAt?new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):''}</span><div class="msg-text">${esc(m.text||'')}</div></div></div>`}
+function nameClass(u){
+  const username=String(u?.username||'').toLowerCase();
+  if(username==='cruz') return 'rgb-cruz-name';
+  return '';
+}
+function getLevelRewards(level){
+  level=Number(level||0);
+  return {activeMember:level>=5,customNameColor:level>=10,glowName:level>=25,veteranTag:level>=35,rainbowName:level>=50,legendTag:level>=75,goldProfile:level>=100};
+}
+function nameClass(u){
+  const username=String(u?.username||'').toLowerCase();
+  const r=getLevelRewards(u?.level||0);
+  if(username==='cruz') return 'rgb-cruz-name';
+  if(r.rainbowName) return 'rainbow-name';
+  if(r.glowName) return 'name-glow';
+  return '';
+}
+function nameStyle(u){
+  const username=String(u?.username||'').toLowerCase();
+  const r=getLevelRewards(u?.level||0);
+  if(username==='cruz') return '';
+  if(r.rainbowName) return '';
+  const color=String(u?.nameColor||'').trim();
+  return r.customNameColor && color ? `style="color:${esc(color)}"` : '';
+}
+function rewardBadges(u){
+  const custom=String(u?.customTag||'').trim().slice(0,18);
+  if(custom) return `<span class="custom-user-tag">${esc(custom).toUpperCase()}</span>`;
+  const r=getLevelRewards(u?.level||0);
+  if(r.legendTag) return '<span class="legend-tag">LEGEND</span>';
+  if(r.veteranTag) return '<span class="veteran-tag">VETERAN</span>';
+  if(r.activeMember) return '<span class="active-member-tag">ACTIVE</span>';
+  return '';
+}
+function canManageMessage(m){
+  const p=rolePower(currentMe()?.role||currentMe()?.rank||'member');
+  return isCruzUser() || p>=2;
+}
+function renderOne(m){
+  const u=mergedUser(m.uid,m);
+  const rank=u.role||u.rank||m.role||'member';
+  const lvl=Number(u.level||0);
+  const staffTools = canManageMessage(m) ? `<span class="msg-tools"><button class="msg-info-btn" data-msg-info="${esc(m.id||'')}" type="button" title="Message tools">ⓘ</button></span>` : '';
+  const levelHtml = lvl ? `<span class="level-pill">Lv ${lvl}</span>` : '';
+  return `<div class="msg" data-mid="${esc(m.id||'')}">${av(u)}<div class="msg-body"><a class="msg-name ${nameClass(u)}" ${nameStyle(u)} href="viewprofile.html?id=${encodeURIComponent(m.uid||'')}">${esc(displayName(u))} ${roleEmoji(rank)} <span class="rank">${esc(rank)}</span>${levelHtml}${rewardBadges(u)}</a>${staffTools}<span class="msg-time">${m.createdAt?new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):''}</span><div class="msg-text">${esc(m.text||'')}</div></div></div>`;
+}
 function scrollBottom(){const box=$('messages'); if(box) box.scrollTop=box.scrollHeight;}
 function insertOrUpdate(m){const box=$('messages'); if(!box)return; const id=m.id||m.localId; if(!id)return; const existing=box.querySelector(`[data-mid="${CSS.escape(id)}"]`); const html=renderOne(m); if(existing){existing.outerHTML=html;}else{ if(!loaded){box.innerHTML=''; loaded=true;} box.insertAdjacentHTML('beforeend',html);} scrollBottom();}
+
+function closeMsgTools(){
+  document.querySelectorAll('.msg-tools-open').forEach(el=>el.remove());
+}
+function openMsgTools(messageId, anchor){
+  closeMsgTools();
+  const msg = document.querySelector(`[data-mid="${CSS.escape(messageId)}"]`);
+  if(!msg) return;
+  const box=document.createElement('div');
+  box.className='msg-tools-open';
+  box.style.cssText='margin-top:8px;display:flex;gap:8px;flex-wrap:wrap';
+  box.innerHTML=`<button class="msg-tool-btn" data-msg-edit="${esc(messageId)}" type="button">Edit</button><button class="msg-tool-btn" data-msg-delete="${esc(messageId)}" type="button">Delete</button>`;
+  msg.querySelector('.msg-body')?.appendChild(box);
+}
+async function deleteMessage(messageId){
+  if(!canManageMessage({})) return;
+  if(!confirm('Delete this message?')) return;
+  await db.ref(DB_ROOT+'/messages/'+messageId).remove();
+  const el=document.querySelector(`[data-mid="${CSS.escape(messageId)}"]`);
+  if(el) el.remove();
+  await logStaff('deleteMessage', messageId, 'chatbox');
+}
+function editMessage(messageId){
+  if(!canManageMessage({})) return;
+  const el=document.querySelector(`[data-mid="${CSS.escape(messageId)}"]`);
+  const textEl=el?.querySelector('.msg-text');
+  if(!el||!textEl) return;
+  const current=textEl.textContent||'';
+  textEl.innerHTML=`<textarea class="msg-edit-box">${esc(current)}</textarea><div style="margin-top:8px;display:flex;gap:8px"><button class="msg-tool-btn" data-msg-save="${esc(messageId)}" type="button">Save</button><button class="msg-tool-btn" data-msg-cancel="${esc(messageId)}" type="button">Cancel</button></div>`;
+}
+async function saveMessageEdit(messageId){
+  const el=document.querySelector(`[data-mid="${CSS.escape(messageId)}"]`);
+  const val=el?.querySelector('.msg-edit-box')?.value?.trim();
+  if(!val) return;
+  await db.ref(DB_ROOT+'/messages/'+messageId).update({text:val.slice(0,600),editedAt:Date.now(),editedBy:me.uid});
+  await logStaff('editMessage', messageId, 'chatbox');
+}
+
 function renderMembers(){const el=$('members'), count=$('chatCount'); if(!el||!count)return; const online=Object.values(presence).filter(p=>p&&p.online&&Date.now()-Number(p.lastSeen||0)<90000); count.textContent=online.length+' online'; el.innerHTML=online.map(p=>{const u=mergedUser(p.uid,p);return `<a class="person" href="viewprofile.html?id=${encodeURIComponent(p.uid)}">${av(u)}<span><b>${esc(displayName(u))} ${roleEmoji(u.role||u.rank||p.role)}</b><span>${esc(p.currentPage||'online')}</span></span><span class="status-dot"></span></a>`}).join('')||'<p class="muted">Nobody online.</p>'}
 let sending=false;
 
@@ -225,8 +308,14 @@ async function sendChat(){
   me=window.FGUser;
   const input=$('chatInput');
   if(!me?.uid||!db||!input)return;
+  me=currentMe();
   if((me.role||'member')==='banned'||Number(me.mutedUntil||0)>Date.now()){window.FGAuth?.showNotice?.('You cannot send chat messages right now.');return;}
   const text=input.value.trim(); if(!text)return;
+  const slowMs=Number(chatSettings.slowmodeMs||3000);
+  if(!isStaff() && lastChatSendAt && Date.now()-lastChatSendAt<slowMs){
+    window.FGAuth?.showNotice?.('Slowmode: wait '+Math.ceil((slowMs-(Date.now()-lastChatSendAt))/1000)+'s.');
+    return;
+  }
   if(text.startsWith('/')){
     input.value=''; input.focus();
     await runCommand(text);
@@ -235,10 +324,22 @@ async function sendChat(){
   sending=true;
   input.value=''; input.focus();
   try{
-    await db.ref(DB_ROOT+'/messages').push({uid:me.uid,username:me.username,name:me.name||me.displayName||me.username,role:me.role||me.rank||'member',photoURL:pickPhoto(me),pfp:pickPhoto(me),text:text.slice(0,600),createdAt:Date.now()});
+    await db.ref(DB_ROOT+'/messages').push({uid:me.uid,username:me.username,name:me.name||me.displayName||me.username,role:me.role||me.rank||'member',photoURL:pickPhoto(me),pfp:pickPhoto(me),nameColor:me.nameColor||'',customTag:me.customTag||'',useRainbowName:!!me.useRainbowName,useGlowName:!!me.useGlowName,level:Number(me.level||0),text:text.slice(0,600),createdAt:Date.now()}); lastChatSendAt=Date.now();
   }catch(err){console.error(err);window.FGAuth?.showNotice?.('Message failed to send.');input.value=text;}
   finally{setTimeout(()=>{sending=false},150)}
 }
+document.addEventListener('click',e=>{
+  const info=e.target.closest('[data-msg-info]');
+  if(info){openMsgTools(info.dataset.msgInfo,info);return;}
+  const del=e.target.closest('[data-msg-delete]');
+  if(del){deleteMessage(del.dataset.msgDelete);return;}
+  const edit=e.target.closest('[data-msg-edit]');
+  if(edit){editMessage(edit.dataset.msgEdit);return;}
+  const save=e.target.closest('[data-msg-save]');
+  if(save){saveMessageEdit(save.dataset.msgSave);return;}
+  const cancel=e.target.closest('[data-msg-cancel]');
+  if(cancel){const id=cancel.dataset.msgCancel; const snapEl=document.querySelector(`[data-mid="${CSS.escape(id)}"]`); if(snapEl){db.ref(DB_ROOT+'/messages/'+id).get().then(s=>insertOrUpdate({id,...(s.val()||{})}));}return;}
+});
 function bindForm(){const form=$('chatForm'), btn=$('chatSend'); if(btn)btn.type='submit'; if(form&&!form.dataset.bound){form.dataset.bound='yes';form.setAttribute('action','javascript:void(0)');form.addEventListener('submit',e=>{e.preventDefault();e.stopPropagation();sendChat();return false});}}
 async function start(){bindForm(); me=window.FGUser; await FGAuth.initFirebase(); db=FGAuth.db();
 const liveMeSnap = await db.ref('siteUsers/'+me.uid).get().catch(()=>null);
@@ -253,7 +354,7 @@ if(isStaff()){ const cb=$('commandsBtn'); if(cb) cb.style.display='inline-flex';
 $('commandsBtn')?.addEventListener('click',()=>$('commandsModal')?.classList.add('open'));
 $('closeCommands')?.addEventListener('click',()=>$('commandsModal')?.classList.remove('open'));
 $('commandsModal')?.addEventListener('click',e=>{if(e.target===$('commandsModal')) $('commandsModal').classList.remove('open')});
- db.ref('siteUsers').on('value',s=>{users=s.val()||{};document.dispatchEvent(new CustomEvent('fg-user-updated',{detail:window.FGUser}));renderMembers();}); db.ref('sitePresence').on('value',s=>{presence=s.val()||{};renderMembers();}); db.ref('siteCustomCommands').on('value',s=>{customCommands=s.val()||{};}); const box=$('messages'); loaded=false; if(box)box.innerHTML='<div class="empty">No messages yet.</div>'; db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_added',snap=>{if($('messages')?.querySelector('.empty')) $('messages').innerHTML=''; loaded=true; insertOrUpdate({id:snap.key,...snap.val()});}); db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_changed',snap=>insertOrUpdate({id:snap.key,...snap.val()}));}
+ db.ref('siteUsers').on('value',s=>{users=s.val()||{};document.dispatchEvent(new CustomEvent('fg-user-updated',{detail:window.FGUser}));renderMembers();}); db.ref('sitePresence').on('value',s=>{presence=s.val()||{};renderMembers();}); db.ref('siteCustomCommands').on('value',s=>{customCommands=s.val()||{};}); db.ref('siteChatSettings').on('value',s=>{chatSettings=s.val()||{};}); const box=$('messages'); loaded=false; if(box)box.innerHTML='<div class="empty">No messages yet.</div>'; db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_added',snap=>{if($('messages')?.querySelector('.empty')) $('messages').innerHTML=''; loaded=true; insertOrUpdate({id:snap.key,...snap.val()});}); db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_changed',snap=>insertOrUpdate({id:snap.key,...snap.val()})); db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_removed',snap=>{const el=document.querySelector(`[data-mid="${CSS.escape(snap.key)}"]`); if(el)el.remove();});}
 document.addEventListener('fg-auth-ready',start,{once:true});
 setTimeout(bindForm,400);setTimeout(bindForm,1200);
 })();
