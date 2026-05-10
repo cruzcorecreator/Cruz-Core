@@ -1,0 +1,165 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#050916"><title>GameHub — Messages</title><link rel="stylesheet" href="ui.css"></head><body>
+<section class="grid layout-messages"><main class="card chat-shell conversation-main"><header class="chat-head"><div><h1 style="margin:0;font-size:1.55rem" id="chatTitle">Pick a conversation</h1><p class="muted" style="margin:4px 0 0" id="chatSub">Private one-on-one messages.</p></div><a class="btn" href="users.html">New DM</a></header><div class="messages" id="dmMessages"><div class="empty">Choose a person on the right.</div></div><form class="composer" id="dmForm" action="javascript:void(0)"><input id="dmInput" maxlength="600" placeholder="Message..." autocomplete="off"><button class="btn primary" id="dmSend" type="button">Send</button></form></main><aside class="card card-pad conversation-list"><div class="section-head"><h1 style="margin:0;font-size:1.4rem">Conversations</h1></div><div class="list" id="convos"><div class="empty">loading conversations...</div></div></aside></section>
+<script src="login-guard.js"></script><script src="shell.js"></script><script>
+const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+let db, me, users = {}, dmIndex = {}, active = null, activeWith = null;
+let activeMessages = new Map();
+let activeListenerRef = null;
+let sending = false;
+
+const convoKey = (a, b) => [String(a || ''), String(b || '')].sort().join('__');
+const urlWith = () => new URLSearchParams(location.search).get('with') || '';
+
+function pickPhoto(u = {}) {
+  return (window.FGAuth?.pickPhoto?.(u)) || String(
+    u.photoURL || u.pfp || u.pfpUrl || u.profilePic || u.profilePicture ||
+    u.profileImage || u.avatar || u.avatarUrl || u.picture || u.photo || u.image || u.icon || ''
+  ).trim();
+}
+
+function avatar(u = {}) {
+  const img = pickPhoto(u);
+  const initial = esc((u.name || u.displayName || u.username || 'U').slice(0, 1).toUpperCase());
+  if (img) {
+    return `<span class="avatar" data-initial="${initial}"><img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove();this.parentElement.textContent=this.parentElement.dataset.initial||'U';"></span>`;
+  }
+  return `<span class="avatar">${initial}</span>`;
+}
+
+function getOtherId(c = {}) {
+  return c.withUid || (c.fromUid && c.fromUid !== me.uid ? c.fromUid : '') || (c.to && c.to !== me.uid ? c.to : '');
+}
+
+function renderConvos() {
+  const arr = Object.entries(dmIndex || {}).map(([id, v]) => ({ id, ...(v || {}) }))
+    .sort((a, b) => Number(b.lastAt || 0) - Number(a.lastAt || 0));
+
+  convos.innerHTML = arr.map(c => {
+    const oid = getOtherId(c);
+    const u = users[oid] || { uid: oid, username: c.fromUsername || oid || 'user', name: c.fromName || c.fromUsername || 'user' };
+    return `<button class="person ${active === c.id ? 'convo-active' : ''}" data-convo="${esc(c.id)}" data-with="${esc(oid)}" type="button" style="width:100%;text-align:left;color:white">${avatar(u)}<span><b>${esc(u.name || u.username || 'user')}</b><span>${esc(c.lastText || '')}</span></span></button>`;
+  }).join('') || '<div class="empty">No DMs yet. Go to Users to message someone.</div>';
+}
+
+function renderMessages() {
+  const list = [...activeMessages.values()].sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0));
+  dmMessages.innerHTML = list.map(m => {
+    const mine = m.from === me.uid;
+    const u = mine ? me : (users[m.from] || { uid: m.from, name: m.fromName, username: m.fromUsername });
+    return `<div class="msg ${mine ? 'mine' : ''}">${avatar(u)}<div class="msg-body"><a class="msg-name" href="viewprofile.html?id=${encodeURIComponent(m.from || '')}">${esc(mine ? 'You' : (u.name || u.username || 'user'))}</a><span class="msg-time">${m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : ''}</span><div class="msg-text">${esc(m.text || '')}</div></div></div>`;
+  }).join('') || '<div class="empty">No messages yet.</div>';
+  dmMessages.scrollTop = dmMessages.scrollHeight;
+}
+
+function startLiveMessages(convo) {
+  if (activeListenerRef) activeListenerRef.off();
+  activeMessages.clear();
+  renderMessages();
+
+  // Important:
+  // The conversation preview reads siteDMIndex, but the open chat must read the actual
+  // saved message list. A value listener loads the full saved history and updates when
+  // either person sends a message, even if the other user is offline.
+  activeListenerRef = db.ref('siteDMs/' + convo + '/messages').limitToLast(160);
+  activeListenerRef.on('value', snap => {
+    activeMessages.clear();
+    snap.forEach(child => {
+      const v = child.val() || {};
+      if (v.text || v.createdAt || v.from) {
+        activeMessages.set(child.key, { id: child.key, ...v });
+      }
+    });
+    renderMessages();
+  }, err => {
+    console.error(err);
+    dmMessages.innerHTML = '<div class="empty">Could not load this conversation.</div>';
+  });
+}
+
+function openConvo(id, withUid) {
+  if (!withUid || !me?.uid) return;
+  active = id || convoKey(me.uid, withUid);
+  activeWith = withUid;
+  renderConvos();
+  const u = users[withUid] || { uid: withUid, username: withUid, name: withUid };
+  chatTitle.textContent = u.name || u.username || 'Conversation';
+  chatSub.innerHTML = `with <a href="viewprofile.html?id=${encodeURIComponent(withUid)}">${esc(u.username || withUid)}</a>`;
+  startLiveMessages(active);
+}
+
+function maybeOpenFromUrl() {
+  const withUid = urlWith();
+  if (withUid && me?.uid && activeWith !== withUid) openConvo(convoKey(me.uid, withUid), withUid);
+}
+
+async function sendDM() {
+  if (sending) return;
+  if (!activeWith) return FGAuth.showNotice('Pick a conversation first.');
+  const text = dmInput.value.trim();
+  if (!text) return;
+  sending = true;
+  dmInput.value = '';
+  const convo = active || convoKey(me.uid, activeWith);
+  active = convo;
+  const createdAt = Date.now();
+  const msg = {
+    from: me.uid,
+    fromName: me.name || me.username,
+    fromUsername: me.username,
+    to: activeWith,
+    text: text.slice(0, 600),
+    createdAt
+  };
+  try {
+    await db.ref('siteDMs/' + convo + '/messages').push(msg);
+
+    const other = users[activeWith] || {};
+    await Promise.all([
+      db.ref('siteDMIndex/' + me.uid + '/' + convo).set({ conversation: convo, withUid: activeWith, fromUid: activeWith, fromName: other.name || other.username || activeWith, fromUsername: other.username || activeWith, lastText: msg.text, lastAt: createdAt }),
+      db.ref('siteDMIndex/' + activeWith + '/' + convo).set({ conversation: convo, withUid: me.uid, fromUid: me.uid, fromName: me.name || me.username, fromUsername: me.username, lastText: msg.text, lastAt: createdAt })
+    ]);
+    if (!activeListenerRef || active !== convo) startLiveMessages(convo);
+  } catch (e) {
+    console.error(e);
+    FGAuth.showNotice('DM failed to send.');
+    dmInput.value = text;
+  } finally {
+    setTimeout(() => { sending = false; }, 150);
+  }
+}
+
+document.addEventListener('fg-auth-ready', async () => {
+  me = window.FGUser;
+  await FGAuth.initFirebase();
+  db = FGAuth.db();
+
+  db.ref('siteUsers').on('value', s => {
+    users = s.val() || {};
+    renderConvos();
+    maybeOpenFromUrl();
+    renderMessages();
+  });
+
+  db.ref('siteDMIndex/' + me.uid).on('value', s => {
+    dmIndex = s.val() || {};
+    renderConvos();
+    maybeOpenFromUrl();
+  });
+
+  maybeOpenFromUrl();
+});
+
+convos.addEventListener('click', e => {
+  const b = e.target.closest('[data-convo]');
+  if (b) openConvo(b.dataset.convo, b.dataset.with);
+});
+
+dmForm.setAttribute('action', 'javascript:void(0)');
+dmSend.type = 'submit';
+dmForm.addEventListener('submit', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  sendDM();
+  return false;
+});
+</script></body></html>

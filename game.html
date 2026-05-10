@@ -283,35 +283,7 @@
       display: block;
       background: #fff;
     }
-
-    .viewer-fallback {
-      position: absolute;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 32px;
-      font-weight: 800;
-      font-size: 1.1rem;
-      letter-spacing: -0.03em;
-      background: #efefef;
-      color: #0f172a;
-    }
-
-    .viewer-fallback.show {
-      display: flex;
-    }
-
-    .viewer-fallback .inner {
-      max-width: 620px;
-    }
-
-    .viewer-fallback a {
-      color: #2563eb;
-    }
-
-    .info-body {
+.info-body {
       padding: 20px;
     }
 
@@ -582,14 +554,8 @@
               </div>
             </div>
 
-            <div class="viewer" aria-label="Geometry Dash window">
-              <iframe id="gameFrame" class="game-frame" src="placeholder" title="placeholder" loading="eager" referrerpolicy="no-referrer" allow="fullscreen *; autoplay *; clipboard-read *; clipboard-write *" allowfullscreen webkitallowfullscreen mozallowfullscreen="">
-              </iframe>
-
-              <div class="viewer-fallback" id="fallback">
-
-                </div>
-              </div>
+            <div class="viewer" aria-label="Game window">
+              <iframe id="gameFrame" class="game-frame" src="about:blank" title="game" loading="eager" referrerpolicy="no-referrer" allow="fullscreen *; autoplay *; clipboard-read *; clipboard-write *" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>
             </div>
           </div>
 
@@ -660,8 +626,7 @@
 
   const openGameBtn = document.getElementById('openGameBtn');
   const frame = document.getElementById('gameFrame');
-  const fallback = document.getElementById('fallback');
-  const fullscreenBtn = document.getElementById('fullscreenBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
   const viewer = document.querySelector('.viewer');
 
   const pageTitle = document.querySelector('.site-title');
@@ -673,8 +638,7 @@
   const gameTitle = document.querySelector('.cover-card .game-title');
   const detailValues = document.querySelectorAll('.detail-value');
   const creditLine = document.querySelector('.credit-line');
-  const fallbackLink = fallback.querySelector('a');
-  if (frame) {
+if (frame) {
     frame.src = 'about:blank';
     frame.style.background = '#000';
   }
@@ -734,10 +698,10 @@
     setText(pageSubtitle, message || 'This item could not be loaded.');
     setText(viewerTitle, 'Unavailable');
     setText(gameTitle, 'Missing item');
-    frame.removeAttribute('src');
-    frame.style.display = 'none';
-    fallback.classList.add('show');
-    fallback.querySelector('.inner').innerHTML = `${escapeHtml(message || 'This item could not be loaded.')}<br><br><a href="index.html">Go back to fun and games</a>`;
+    if (frame) {
+      frame.removeAttribute('src');
+      frame.style.display = 'none';
+    }
     if (openGameBtn) openGameBtn.style.display = 'none';
   }
 
@@ -783,26 +747,16 @@
 
     frame.src = game.embedUrl || launchUrl;
     frame.title = game.title || 'fun and games item';
-    if (fallbackLink) {
-      fallbackLink.href = launchUrl || '#';
-      fallbackLink.textContent = `Open ${game.title || 'item'}`;
-    }
-    if (openGameBtn) {
+if (openGameBtn) {
       openGameBtn.addEventListener('click', () => {
         window.open(launchUrl || frame.src, '_blank', 'noopener,noreferrer');
       });
     }
-
-    let frameLoaded = false;
-    frame.addEventListener('load', () => { frameLoaded = true; });
-    setTimeout(() => {
-      if (!frameLoaded) {
-        fallback.classList.add('show');
-      }
-    }, 1200);
-  } catch (error) {
+} catch (error) {
     console.error(error);
   }
 </script>
 
+  <script src="./login-guard.js"></script>
+<script type="module" src="./auth.js"></script>
 </body></html>

@@ -1,1043 +1,186 @@
-<!DOCTYPE html>
-<html lang="en"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>fun and games admin</title>
-<style>
-    * { box-sizing: border-box; }
-
-    :root {
-      --bg-1: #0b1220;
-      --bg-2: #111827;
-      --panel: rgba(15, 23, 42, 0.72);
-      --panel-strong: rgba(15, 23, 42, 0.92);
-      --card-border: rgba(255, 255, 255, 0.12);
-      --text: #f8fafc;
-      --muted: #a5b4cc;
-      --shadow: 0 20px 60px rgba(0, 0, 0, 0.34);
-      --radius-xl: 34px;
-      --radius-lg: 24px;
-      --radius-md: 18px;
-      --accent: #60a5fa;
-      --green: #34d399;
-      --yellow: #fbbf24;
-      --red: #f87171;
-      --violet: #a78bfa;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(96, 165, 250, 0.18), transparent 30%),
-        radial-gradient(circle at top right, rgba(168, 85, 247, 0.16), transparent 28%),
-        linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 52%, #09111f 100%);
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
-      background-size: 32px 32px;
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent 92%);
-    }
-
-    .page-wrap {
-      width: min(1400px, calc(100% - 32px));
-      margin: 0 auto;
-      padding: 28px 0 42px;
-    }
-
-    .shell {
-      background: var(--panel);
-      border: 1px solid var(--card-border);
-      border-radius: 38px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      overflow: hidden;
-    }
-
-    .hero {
-      position: relative;
-      padding: 28px 28px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      background:
-        radial-gradient(circle at 20% 0%, rgba(96, 165, 250, 0.14), transparent 30%),
-        radial-gradient(circle at 80% 15%, rgba(56, 189, 248, 0.12), transparent 24%),
-        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 26px;
-      flex-wrap: wrap;
-    }
-
-    .chip-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      min-height: 54px;
-      padding: 0 22px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.08);
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-      cursor: pointer;
-    }
-
-    .chip-btn:hover {
-      transform: translateY(-2px);
-      background: rgba(255,255,255,0.12);
-      border-color: rgba(255,255,255,0.25);
-    }
-
-    .chip-btn.primary {
-      background: linear-gradient(135deg, #38bdf8, #3b82f6);
-      border-color: rgba(255,255,255,0.1);
-      color: white;
-    }
-
-    .hero-main {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 24px;
-      align-items: end;
-      padding-bottom: 20px;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: #dbeafe;
-      background: rgba(59, 130, 246, 0.18);
-      border: 1px solid rgba(96, 165, 250, 0.25);
-      margin-bottom: 16px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .site-title {
-      margin: 0;
-      font-size: clamp(3rem, 6vw, 5.6rem);
-      line-height: 0.9;
-      letter-spacing: -0.07em;
-      font-weight: 900;
-    }
-
-    .site-subtitle {
-      margin: 16px 0 0;
-      max-width: 700px;
-      font-size: 1.05rem;
-      line-height: 1.65;
-      color: var(--muted);
-    }
-
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .stat-card {
-      padding: 18px;
-      border-radius: 22px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      min-height: 110px;
-    }
-
-    .stat-label {
-      font-size: 0.84rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      margin-bottom: 8px;
-      font-weight: 700;
-    }
-
-    .stat-value {
-      font-size: 1.65rem;
-      font-weight: 800;
-      letter-spacing: -0.05em;
-      margin-bottom: 4px;
-    }
-
-    .stat-note {
-      font-size: 0.95rem;
-      color: #d8e5f7;
-    }
-
-    .content { padding: 28px; }
-
-    .announce-preview {
-      display: none;
-      margin-bottom: 18px;
-      padding: 14px 18px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(59,130,246,0.12);
-      color: #dbeafe;
-      font-weight: 700;
-    }
-
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 22px;
-      flex-wrap: wrap;
-    }
-
-    .section-title {
-      margin: 0;
-      font-size: 1.5rem;
-      letter-spacing: -0.04em;
-    }
-
-    .section-copy {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 0.98rem;
-    }
-
-    .page-badge {
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #d8e5f7;
-      font-weight: 700;
-    }
-
-    .admin-grid {
-      display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 22px;
-      align-items: start;
-    }
-
-    .panel {
-      padding: 22px;
-      border-radius: 28px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 18px 40px rgba(0,0,0,0.16);
-    }
-
-    .panel h3 {
-      margin: 0 0 6px;
-      font-size: 1.3rem;
-      letter-spacing: -0.04em;
-    }
-
-    .panel p {
-      margin: 0 0 18px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .field-grid {
-      display: grid;
-      gap: 14px;
-    }
-
-    .field label {
-      display: block;
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: #dbeafe;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .field input,
-    .field textarea,
-    .field select {
-      width: 100%;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(8, 15, 28, 0.65);
-      color: var(--text);
-      border-radius: 18px;
-      padding: 14px 16px;
-      font: inherit;
-      outline: none;
-      transition: border-color 0.18s ease, background 0.18s ease;
-    }
-
-    .field textarea {
-      min-height: 120px;
-      resize: vertical;
-    }
-
-    .field input:focus,
-    .field textarea:focus,
-    .field select:focus {
-      border-color: rgba(96, 165, 250, 0.62);
-      background: rgba(10, 18, 34, 0.9);
-    }
-
-    .actions-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: 800;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #e5eefc;
-    }
-
-    .games-list {
-      display: grid;
-      gap: 14px;
-      max-height: 820px;
-      overflow: auto;
-      padding-right: 4px;
-    }
-
-    .game-row {
-      padding: 18px;
-      border-radius: 24px;
-      background: rgba(10, 18, 33, 0.7);
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .game-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      align-items: start;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-
-    .game-title {
-      font-size: 1.2rem;
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      text-transform: lowercase;
-    }
-
-    .game-meta {
-      font-size: 0.95rem;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .state-pills {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .pill {
-      padding: 7px 11px;
-      border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 900;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.06);
-    }
-
-    .pill.hidden { background: rgba(248, 113, 113, 0.14); color: #fecaca; }
-    .pill.locked { background: rgba(251, 191, 36, 0.14); color: #fde68a; }
-    .pill.live { background: rgba(52, 211, 153, 0.14); color: #bbf7d0; }
-
-    .row-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .row-actions .chip-btn {
-      min-height: 44px;
-      padding: 0 16px;
-      font-size: 0.94rem;
-    }
-
-    .chip-btn.danger { background: rgba(248,113,113,0.14); color: #fecaca; }
-    .chip-btn.warn { background: rgba(251,191,36,0.14); color: #fde68a; }
-    .chip-btn.good { background: rgba(52,211,153,0.14); color: #bbf7d0; }
-    .chip-btn.soft { background: rgba(255,255,255,0.08); color: #e5eefc; }
-
-    .mini {
-      font-size: 0.88rem;
-      color: var(--muted);
-      margin-top: 8px;
-      line-height: 1.5;
-    }
-
-    .save-note {
-      margin-top: 16px;
-      font-size: 0.95rem;
-      color: #dbeafe;
-      min-height: 1.5em;
-    }
-
-    @media (max-width: 1100px) {
-      .hero-main,
-      .admin-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 760px) {
-      .page-wrap {
-        width: min(100% - 20px, 1400px);
-        padding: 12px 0 24px;
-      }
-
-      .hero,
-      .content { padding: 18px; }
-
-      .topbar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .chip-btn { width: 100%; }
-      .hero-stats { grid-template-columns: 1fr; }
-    }
-  </style>
-</head>
-<body>
-  <div class="page-wrap">
-    <div class="shell">
-      <header class="hero">
-        <div class="topbar">
-          <div style="display:flex; gap:16px; flex-wrap:wrap;">
-            <a class="chip-btn" href="index.html">open homepage</a>
-            <button class="chip-btn" id="patchNotesBtn" type="button">patch notes preview</button>
-          </div>
-          <button class="chip-btn primary" id="refreshBtn" type="button">refresh firebase data</button>
-        </div>
-
-        <div class="hero-main">
-          <div>
-            <div class="eyebrow">ADMIN PANEL</div>
-            <h1 class="site-title">fun and games</h1>
-            <p class="site-subtitle">control the homepage, patch notes, and your full firebase game catalog from one dashboard.</p>
-          </div>
-
-          <div class="hero-stats">
-            <div class="stat-card">
-              <div class="stat-label">managed games</div>
-              <div class="stat-value" id="gameCount">0</div>
-              <div class="stat-note">games and apps in firebase</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">firebase</div>
-              <div class="stat-value" id="firebaseState">ready</div>
-              <div class="stat-note">changes save live to Realtime Database</div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main class="content">
-        <div class="announce-preview" id="announcePreview"></div>
-
-        <div class="section-head">
-          <div>
-            <h2 class="section-title">homepage controls</h2>
-            <p class="section-copy">edit site text, patch notes, and every game card without touching HTML again.</p>
-          </div>
-          <div class="page-badge">live admin</div>
-        </div>
-
-        <div class="admin-grid">
-          <section class="panel">
-            <h3>global controls</h3>
-            <p>These settings control the homepage header, announcement banner, and patch notes modal.</p>
-            <div class="field-grid">
-              <div class="field"><label for="heroSubtitle">homepage header description</label><textarea id="heroSubtitle"></textarea></div>
-              <div class="field"><label for="announcementText">announcement banner</label><textarea id="announcementText"></textarea></div>
-              <div class="field"><label for="announcementEnabled">announcement visibility</label><select id="announcementEnabled"><option value="false">off</option><option value="true">on</option></select></div>
-              <div class="field"><label for="libraryTitle">library section title</label><input id="libraryTitle" type="text"></div>
-              <div class="field"><label for="libraryCopy">library section description</label><input id="libraryCopy" type="text"></div>
-              <div class="field"><label for="siteMode">site mode</label><select id="siteMode"><option value="normal">normal</option><option value="maintenance">maintenance banner only</option></select></div>
-              <div class="field"><label for="patchNotesUpdatedInput">patch notes subtitle</label><input id="patchNotesUpdatedInput" type="text"></div>
-              <div class="field"><label for="patchNotesInput">patch notes body</label><textarea id="patchNotesInput"></textarea></div>
-            </div>
-            <div class="actions-row">
-              <button class="chip-btn primary" id="saveGlobalBtn" type="button">save global settings</button>
-              <button class="chip-btn soft" id="resetGlobalBtn" type="button">reset text to default</button>
-            </div>
-            <div class="save-note" id="saveStatus">ready to edit</div>
-          </section>
-
-          <section class="panel">
-            <h3>game editor</h3>
-            <p>Add new games/apps or edit existing ones. These show up on both the homepage and the universal <strong>game.html</strong> page.</p><p class="mini">For safety, external links must use <strong>https://</strong>. JavaScript, data, blob, and file URLs are blocked. External redirects are labeled clearly on the homepage.</p>
-            <div class="field-grid">
-              <div class="field"><label for="gameId">id / slug</label><input id="gameId" type="text" placeholder="ragdoll-hit"></div>
-              <div class="field"><label for="gameTitle">title</label><input id="gameTitle" type="text"></div>
-              <div class="field"><label for="gameDescription">description</label><textarea id="gameDescription"></textarea></div>
-              <div class="field"><label for="gameEmbedUrl">embed or launch url</label><input id="gameEmbedUrl" type="text"></div>
-              <div class="field"><label for="gameSourceUrl">source url label target</label><input id="gameSourceUrl" type="text"></div>
-              <div class="field"><label for="gameThumbnailUrl">thumbnail image url</label><input id="gameThumbnailUrl" type="text"></div>
-              <div class="field"><label for="gameThumbText">thumb text fallback</label><input id="gameThumbText" type="text" placeholder="W"></div>
-              <div class="field"><label for="gameTag">tag</label><input id="gameTag" type="text" placeholder="arcade"></div>
-              <div class="field"><label for="gameType">type</label><select id="gameType"><option value="game">game</option><option value="app">app</option></select></div>
-              <div class="field"><label for="gamePage">homepage page number</label><input id="gamePage" type="number" min="1" value="1"></div>
-              <div class="field"><label for="gameOrder">order on page</label><input id="gameOrder" type="number" min="1" value="1"></div>
-              <div class="field"><label for="gameThemeClass">theme class</label><input id="gameThemeClass" type="text" placeholder="geometry or custom-card"></div>
-              <div class="field"><label for="gameCardStyle">custom card style</label><input id="gameCardStyle" type="text" placeholder="background: linear-gradient(...)"></div>
-              <div class="field"><label for="gameTextColor">text color</label><input id="gameTextColor" type="text" placeholder="#ffffff or black"></div>
-              <div class="field"><label for="gamePlatform">platform</label><input id="gamePlatform" type="text" placeholder="browser"></div>
-              <div class="field"><label for="gameStatusText">status text</label><input id="gameStatusText" type="text" placeholder="live"></div>
-              <div class="field"><label for="gameAddedText">added text</label><input id="gameAddedText" type="text" placeholder="classic"></div>
-              <div class="field"><label for="gameCredits">credits</label><input id="gameCredits" type="text" placeholder="original creators"></div>
-              <div class="field"><label for="gameSourceLabel">source label</label><input id="gameSourceLabel" type="text" placeholder="launch url"></div>
-              <div class="field"><label for="gameOpenMode">launch behavior</label><select id="gameOpenMode"><option value="embed">use game.html page</option><option value="redirect">redirect directly to url</option></select></div>
-              <div class="field"><label for="gameHidden">hidden on homepage</label><select id="gameHidden"><option value="false">visible</option><option value="true">hidden</option></select></div>
-              <div class="field"><label for="gameLocked">locked to construction</label><select id="gameLocked"><option value="false">unlocked</option><option value="true">locked</option></select></div>
-            </div>
-            <div class="actions-row">
-              <button class="chip-btn primary" id="saveGameBtn" type="button">save game/app</button>
-              <button class="chip-btn soft" id="newGameBtn" type="button">new blank form</button>
-              <button class="chip-btn soft" id="seedDefaultsBtn" type="button">restore default catalog</button>
-            </div>
-            <div class="save-note" id="editorStatus">pick a game to edit or make a new one</div>
-          </section>
-        </div>
-
-        <div class="section-head" style="margin-top:24px;">
-          <div>
-            <h2 class="section-title">game actions</h2>
-            <p class="section-copy">full list of every game currently in firebase.</p>
-          </div>
-          <div class="status-pill">live list</div>
-        </div>
-        <section class="panel">
-          <div class="games-list" id="gamesList"></div>
-        </section>
-      </main>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#050916"><meta name="robots" content="noindex,nofollow"><title>GameHub — Admin</title><link rel="stylesheet" href="ui.css"></head><body>
+<section><div class="section-head"><div><h1 class="page-title">Admin Panel</h1><p class="muted">User control center, announcements, DMs, and game tools.</p></div><span class="rank" id="adminRank">checking...</span></div><div class="admin-layout"><aside class="card card-pad admin-users"><div class="section-head"><h2>Users</h2><button class="btn primary" id="openAddAccount" type="button">Add Account</button></div><input class="search" id="userSearch" placeholder="Search users..."><div class="list" id="usersList" style="margin-top:14px"><div class="empty">loading users...</div></div></aside><main class="grid"><section class="card card-pad admin-detail"><h2>Selected User</h2><div id="selectedUser"><p class="muted">Pick a user to edit.</p></div></section><section class="admin-tools"><div class="card card-pad"><h2>Site-wide Announcement</h2><div class="field"><label>Notification text</label><textarea id="announceText" maxlength="220"></textarea></div><button class="btn primary" id="sendAnnounce" type="button">Send 6-second notification</button></div><div class="card card-pad"><h2>DM Viewer</h2><div class="list" id="dmViewer"><p class="muted">Select a user to see conversations.</p></div></div><div class="card card-pad"><h2>User Notes</h2><div class="list" id="notesViewer"><p class="muted">Select a user to see notes.</p></div></div>
+<div class="card card-pad"><h2>Game Tools</h2>
+  <p class="muted" id="gamePermText">Only owner/tester can add or edit games.</p>
+  <div id="gameEditor">
+    <div class="field"><label>Pick Existing Game</label><select id="gameSelect" class="search"><option value="">New game...</option></select></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+      <div class="field"><label>Game ID</label><input id="gameId" placeholder="geometry-dash"></div>
+      <div class="field"><label>Title</label><input id="gameTitle"></div>
+      <div class="field"><label>Embed / Launch URL</label><input id="gameUrl"></div>
+      <div class="field"><label>Source URL</label><input id="gameSourceUrl"></div>
+      <div class="field"><label>Thumbnail URL</label><input id="gameThumb"></div>
+      <div class="field"><label>Tag</label><input id="gameTag" placeholder="game"></div>
+      <div class="field"><label>Type</label><select id="gameType" class="search"><option value="game">game</option><option value="app">app</option></select></div>
+      <div class="field"><label>Open Mode</label><select id="gameOpenMode" class="search"><option value="embed">embed in game.html</option><option value="redirect">redirect directly</option></select></div>
+      <div class="field"><label>Locked?</label><select id="gameLocked" class="search"><option value="false">unlocked</option><option value="true">locked</option></select></div>
+      <div class="field"><label>Hidden?</label><select id="gameHidden" class="search"><option value="false">visible</option><option value="true">hidden</option></select></div>
+      <div class="field"><label>Page</label><input id="gamePage" type="number" min="1" value="1"></div>
+      <div class="field"><label>Order</label><input id="gameOrder" type="number" min="1" value="1"></div>
     </div>
-  </div>
-
-  <div class="modal-overlay" id="patchModal" aria-hidden="true">
-    <div class="modal-card">
-      <div class="modal-top">
-        <h2 class="modal-title">patch notes preview</h2>
-        <button class="chip-btn" id="closePatchNotesBtn" type="button">close</button>
-      </div>
-      <p class="modal-copy" id="patchNotesUpdated">latest homepage updates and changes.</p>
-      <div class="patch-notes-body" id="patchNotesContent">No patch notes yet.</div>
+    <div class="field"><label>Description</label><textarea id="gameDesc"></textarea></div>
+    <div class="button-row">
+      <button class="btn primary" id="saveGame" type="button">Save Game</button>
+      <button class="btn" id="newGame" type="button">New Blank</button>
+      <button class="btn" id="lockGame" type="button">Lock</button>
+      <button class="btn" id="unlockGame" type="button">Unlock</button>
+      <button class="btn danger" id="deleteGame" type="button">Delete</button>
     </div>
+    <p class="muted" id="gameStatus">Loading games...</p>
+    <div class="list" id="gamesAdminList"><p class="muted">loading...</p></div>
   </div>
+</div>
 
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
-    import { getDatabase, ref, get, set, update, remove } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js';
-    const firebaseConfig = { apiKey:'AIzaSyDvKpZacWOgca6PtoA6wP2QFX3JbI-Dvw4', authDomain:'funandgames-4e8c1.firebaseapp.com', databaseURL:'https://funandgames-4e8c1-default-rtdb.firebaseio.com', projectId:'funandgames-4e8c1', storageBucket:'funandgames-4e8c1.firebasestorage.app', messagingSenderId:'240713956788', appId:'1:240713956788:web:37b64a7a534f1e2bea06e1', measurementId:'G-KLSV3Q73MR' };
-    const DEFAULTS = { heroSubtitle:'a game website to just generally have fun!', libraryTitle:'library', libraryCopy:'Pick a game or tool below to launch it instantly.', announcementEnabled:false, announcementText:'', siteMode:'normal', patchNotes:'No patch notes yet.', patchNotesUpdated:'latest homepage updates and changes.' };
-    const DEFAULT_GAMES = [
-  {
-    "id": "duckmath",
-    "title": "duckmath",
-    "description": "a bunch of different games in one website.",
-    "embedUrl": "https://resources.a.staticdata.top/",
-    "sourceUrl": "https://resources.a.staticdata.top/",
-    "thumbnailUrl": "https://duck-math.freetls.fastly.net/imgs/duck.webp",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "math",
-    "page": 1,
-    "type": "game",
-    "themeClass": "duckmath",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 1
-  },
-  {
-    "id": "wordle",
-    "title": "wordle",
-    "description": "fun word guessing and its unlimited",
-    "embedUrl": "wordle.html",
-    "sourceUrl": "wordle.html",
-    "thumbnailUrl": "",
-    "thumbText": "W",
-    "thumbHtml": "W",
-    "tag": "word",
-    "page": 1,
-    "type": "game",
-    "themeClass": "wordle light-text",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 2
-  },
-  {
-    "id": "minecraft",
-    "title": "minecraft",
-    "description": "a game of survival or sandbox",
-    "embedUrl": "https://classroomlesson.github.io/basic-ruffle-player/html/minecraft/duckcraft/duckcraft-v1.html",
-    "sourceUrl": "https://classroomlesson.github.io/basic-ruffle-player/html/minecraft/duckcraft/duckcraft-v1.html",
-    "thumbnailUrl": "https://i.imgur.com/nKsYRdJ.png",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "sandbox",
-    "page": 1,
-    "type": "game",
-    "themeClass": "minecraft light-text",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 3
-  },
-  {
-    "id": "plinko",
-    "title": "plinko",
-    "description": "a gambling game. try not to lose money!",
-    "embedUrl": "https://plinko-game-online.github.io/",
-    "sourceUrl": "https://plinko-game-online.github.io/",
-    "thumbnailUrl": "",
-    "thumbText": "Plinko",
-    "thumbHtml": "<div class=\"thumb-text\">Plinko</div>",
-    "tag": "arcade",
-    "page": 1,
-    "type": "game",
-    "themeClass": "plinko light-text",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 4
-  },
-  {
-    "id": "snow-rider",
-    "title": "snow rider",
-    "description": "its fun racing in the snow!",
-    "embedUrl": "https://itsvijaysingh.github.io/Snow-Rider3D/",
-    "sourceUrl": "https://itsvijaysingh.github.io/Snow-Rider3D/",
-    "thumbnailUrl": "https://merlot.org/merlot/getMaterialImage.htm?id=773417944",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "racing",
-    "page": 1,
-    "type": "game",
-    "themeClass": "snow light-text",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 5
-  },
-  {
-    "id": "renweb",
-    "title": "renweb",
-    "description": "check your grades! i bet they're good!",
-    "embedUrl": "https://familyportal.renweb.com",
-    "sourceUrl": "https://familyportal.renweb.com",
-    "thumbnailUrl": "https://p.kindpng.com/picc/s/594-5943254_facts-facts-renweb-hd-png-download.png",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "school",
-    "page": 1,
-    "type": "app",
-    "themeClass": "renweb",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "redirect",
-    "hidden": false,
-    "locked": false,
-    "order": 6
-  },
-  {
-    "id": "fnaf-1",
-    "title": "fnaf 1",
-    "description": "a point and click classic game of strategic door closing",
-    "embedUrl": "https://algebraschoolstudy.github.io/SchoolStudyGuidesList/1/index.html",
-    "sourceUrl": "https://algebraschoolstudy.github.io/SchoolStudyGuidesList/1/index.html",
-    "thumbnailUrl": "https://image.api.playstation.com/gs2-sec/appkgo/prod/CUSA18362_00/1/i_cd6a177c374f229f9cd8e1164a78d49f78af97820747d480daf8cdd3e965c248/i/icon0.png",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "horror",
-    "page": 1,
-    "type": "game",
-    "themeClass": "fnaf light-text",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 7
-  },
-  {
-    "id": "ai-chatbot",
-    "title": "ai chatbot",
-    "description": "get help on your daily life with this ai",
-    "embedUrl": "aichatbot.html",
-    "sourceUrl": "aichatbot.html",
-    "thumbnailUrl": "https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "ai",
-    "page": 1,
-    "type": "app",
-    "themeClass": "chatgpt",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 8
-  },
-  {
-    "id": "neal-fun",
-    "title": "neal.fun",
-    "description": "a unique website containing tons of excitng games like infinite craft",
-    "embedUrl": "https://neal.fun",
-    "sourceUrl": "https://neal.fun",
-    "thumbnailUrl": "https://cdn.buymeacoffee.com/uploads/profile_pictures/2025/10/IG9EK8jZj0v2CEW4.png@300w_0e.webp",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "fun",
-    "page": 1,
-    "type": "app",
-    "themeClass": "neal",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "redirect",
-    "hidden": false,
-    "locked": false,
-    "order": 9
-  },
-  {
-    "id": "poki",
-    "title": "poki",
-    "description": "a website with a whole bunch of games",
-    "embedUrl": "construction.html",
-    "sourceUrl": "construction.html",
-    "thumbnailUrl": "https://play-lh.googleusercontent.com/FBwBJqAv2KjTXRDRaEkrY3r2PJUWZbru1Y-6VyQY4Sku776mLJ2fIh1nMqzsmGdXUPI=w240-h480-rw",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "hub",
-    "page": 2,
-    "type": "game",
-    "themeClass": "poki",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 10
-  },
-  {
-    "id": "soundboard",
-    "title": "soundboard",
-    "description": "funny sound effects, dont get in trouble!",
-    "embedUrl": "https://soundinstants.com",
-    "sourceUrl": "https://soundinstants.com",
-    "thumbnailUrl": "https://upload.wikimedia.org/wikipedia/commons/2/21/Speaker_Icon.svg",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "audio",
-    "page": 2,
-    "type": "app",
-    "themeClass": "soundboard",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "redirect",
-    "hidden": false,
-    "locked": false,
-    "order": 11
-  },
-  {
-    "id": "subway-surfers",
-    "title": "subway surfers",
-    "description": "run from the police, and dont get ran over by a train!",
-    "embedUrl": "http://subwaysurfers76.github.io",
-    "sourceUrl": "http://subwaysurfers76.github.io",
-    "thumbnailUrl": "https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/7f4c7dc492227ec127a47e4b3197754e/subway-surfers.png",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "runner",
-    "page": 2,
-    "type": "game",
-    "themeClass": "subway light-text",
-    "cardStyle": "background: linear-gradient(135deg, #ff7d36 0%, #ffbb38 100%); color:#2f1700;",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 12
-  },
-  {
-    "id": "ragdoll-hit",
-    "title": "ragdoll hit",
-    "description": "a graphic game of hitting people!",
-    "embedUrl": "ragdoll_redesign.html",
-    "sourceUrl": "ragdoll_redesign.html",
-    "thumbnailUrl": "https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/3c892779be9dabb3589586c83ad3eeed/ragdoll-hit.png",
-    "thumbText": "",
-    "thumbHtml": "",
-    "tag": "fight",
-    "page": 2,
-    "type": "game",
-    "themeClass": "ragdoll",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 13
-  },
-  {
-    "id": "doodle-jump",
-    "title": "doodle jump",
-    "description": "jumping around to get the highest score possible",
-    "embedUrl": "doodle.html",
-    "sourceUrl": "doodle.html",
-    "thumbnailUrl": "",
-    "thumbText": "D",
-    "thumbHtml": "D",
-    "tag": "classic",
-    "page": 2,
-    "type": "game",
-    "themeClass": "doodle",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 14
-  },
-  {
-    "id": "geometry-dash",
-    "title": "geometry dash",
-    "description": "try not to get spiked, but have fun!",
-    "embedUrl": "dash.html",
-    "sourceUrl": "dash.html",
-    "thumbnailUrl": "",
-    "thumbText": "",
-    "thumbHtml": "<span></span><span></span><span></span><span></span>",
-    "tag": "platform",
-    "page": 2,
-    "type": "game",
-    "themeClass": "geometry",
-    "cardStyle": "",
-    "platform": "browser",
-    "statusText": "live",
-    "addedText": "classic",
-    "credits": "original creators",
-    "sourceLabel": "launch url",
-    "openMode": "embed",
-    "hidden": false,
-    "locked": false,
-    "order": 15
-  }
-];
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const settingsRef = ref(db, 'homepageAdmin/settings');
-    const gamesRef = ref(db, 'homepageAdmin/games');
-    const el = {
-      heroSubtitle: document.getElementById('heroSubtitle'), announcementText: document.getElementById('announcementText'), announcementEnabled: document.getElementById('announcementEnabled'), libraryTitle: document.getElementById('libraryTitle'), libraryCopy: document.getElementById('libraryCopy'), siteMode: document.getElementById('siteMode'), patchNotesInput: document.getElementById('patchNotesInput'), patchNotesUpdatedInput: document.getElementById('patchNotesUpdatedInput'), saveGlobalBtn: document.getElementById('saveGlobalBtn'), resetGlobalBtn: document.getElementById('resetGlobalBtn'), refreshBtn: document.getElementById('refreshBtn'), saveStatus: document.getElementById('saveStatus'), gamesList: document.getElementById('gamesList'), gameCount: document.getElementById('gameCount'), firebaseState: document.getElementById('firebaseState'), announcePreview: document.getElementById('announcePreview'), patchNotesBtn: document.getElementById('patchNotesBtn'), patchModal: document.getElementById('patchModal'), closePatchNotesBtn: document.getElementById('closePatchNotesBtn'), patchNotesContent: document.getElementById('patchNotesContent'), patchNotesUpdated: document.getElementById('patchNotesUpdated'),
-      gameId: document.getElementById('gameId'), gameTitle: document.getElementById('gameTitle'), gameDescription: document.getElementById('gameDescription'), gameEmbedUrl: document.getElementById('gameEmbedUrl'), gameSourceUrl: document.getElementById('gameSourceUrl'), gameThumbnailUrl: document.getElementById('gameThumbnailUrl'), gameThumbText: document.getElementById('gameThumbText'), gameTag: document.getElementById('gameTag'), gameType: document.getElementById('gameType'), gamePage: document.getElementById('gamePage'), gameOrder: document.getElementById('gameOrder'), gameThemeClass: document.getElementById('gameThemeClass'), gameCardStyle: document.getElementById('gameCardStyle'), gameTextColor: document.getElementById('gameTextColor'), gamePlatform: document.getElementById('gamePlatform'), gameStatusText: document.getElementById('gameStatusText'), gameAddedText: document.getElementById('gameAddedText'), gameCredits: document.getElementById('gameCredits'), gameSourceLabel: document.getElementById('gameSourceLabel'), gameOpenMode: document.getElementById('gameOpenMode'), gameHidden: document.getElementById('gameHidden'), gameLocked: document.getElementById('gameLocked'), saveGameBtn: document.getElementById('saveGameBtn'), newGameBtn: document.getElementById('newGameBtn'), seedDefaultsBtn: document.getElementById('seedDefaultsBtn'), editorStatus: document.getElementById('editorStatus')
-    };
-    let currentGameStates = {};
+<div class="card card-pad">
+  <h2>Custom Troll Command Builder</h2>
+  <p class="muted">Creates staff-only commands like <strong>/rickroll username</strong>. Stored in Firebase, not hardcoded.</p>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+    <div class="field"><label>Command Name</label><input id="cmdName" placeholder="rickroll"></div>
+    <div class="field"><label>Emoji Shown</label><input id="cmdEmoji" placeholder="🎵"></div>
+    <div class="field"><label>Text Shown</label><input id="cmdText" placeholder="Never gonna give you up!"></div>
+    <div class="field"><label>Duration ms</label><input id="cmdDuration" type="number" value="2400"></div>
+    <div class="field"><label>Shake Page?</label><select id="cmdShake" class="search"><option value="false">no</option><option value="true">yes</option></select></div>
+    <div class="field"><label>Redirect?</label><select id="cmdRedirect" class="search"><option value="false">no</option><option value="true">yes</option></select></div>
+    <div class="field"><label>Redirect URL</label><input id="cmdRedirectUrl" placeholder="https://example.com"></div>
+    <div class="field"><label>Play Sound?</label><input id="cmdSoundUrl" placeholder="sound URL"></div>
+    <div class="field"><label>Image Instead</label><input id="cmdImageUrl" placeholder="image URL"></div>
+  </div>
+  <div class="button-row">
+    <button class="btn primary" id="saveCustomCommand" type="button">Save Command</button>
+    <button class="btn danger" id="deleteCustomCommand" type="button">Delete Command</button>
+  </div>
+  <p class="muted" id="cmdStatus">Example use after saving: /rickroll username</p>
+  <div class="list" id="customCommandsList"><p class="muted">loading commands...</p></div>
+</div>
+</section></main></div></section>
+<div class="modal-lite" id="addModal"><div class="modal-box"><h2 style="margin-top:0">Add Account</h2><div class="field"><label>Username</label><input id="newUsername"></div><div class="field"><label>Display Name</label><input id="newName"></div><div class="field"><label>Password</label><input id="newPass" type="password"></div><div class="field"><label>Rank</label><select id="newRank" class="search"><option>member</option><option>helper</option><option>mod</option><option>admin</option><option>tester</option><option>owner</option><option>banned</option></select></div><div class="button-row"><button class="btn primary" id="createAccount" type="button">Create</button><button class="btn" id="closeAdd" type="button">Cancel</button></div><p class="muted" id="addStatus"></p></div></div>
+<script src="login-guard.js"></script><script src="shell.js"></script><script>
+const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));let db,me,users={},presence={},selected=null;const power=r=>({banned:-1,member:0,helper:1,mod:2,admin:3,tester:4,owner:5}[r]??0);function isCruzUser(u=me){return String(u?.username||'').toLowerCase()==='cruz'}const rankEmoji=r=>({owner:'👑',tester:'🧪',admin:'🛡️',mod:'🔨',helper:'✨',banned:'🚫',member:''}[r]||'');function photo(u){return (window.FGAuth?.pickPhoto?.(u))||u?.photoURL||u?.pfp||u?.pfpUrl||u?.profilePic||u?.profilePicture||u?.profileImage||u?.avatar||u?.avatarUrl||u?.picture||u?.photo||u?.image||u?.icon||''}function av(u){const img=photo(u);return img?`<span class="avatar"><img src="${esc(img)}" alt=""></span>`:`<span class="avatar">${esc((u?.name||u?.username||'U').slice(0,1).toUpperCase())}</span>`}function canEditRanks(){return isCruzUser()||power(me?.role)>=5}function canGame(){return isCruzUser()||['owner','tester'].includes(me?.role)}function protectedUser(u){return ['owner','tester'].includes(u?.role)}function canOverrideProtected(){return isCruzUser()}function cleanUser(s){return String(s||'').toLowerCase().trim().replace(/[^a-z0-9_.-]/g,'').slice(0,24)}function cleanName(s){return String(s||'').replace(/\s+/g,' ').trim().slice(0,24)}function renderUsers(){const q=(userSearch.value||'').toLowerCase();const arr=Object.values(users).filter(u=>u&&u.uid).filter(u=>[u.username,u.name,u.role,u.bio].join(' ').toLowerCase().includes(q)).sort((a,b)=>power(b.role)-power(a.role)||String(a.username).localeCompare(String(b.username)));usersList.innerHTML=arr.map(u=>{const p=presence[u.uid]||{},on=p.online&&Date.now()-Number(p.lastSeen||0)<90000;return `<button class="person ${selected===u.uid?'convo-active':''}" data-select="${esc(u.uid)}" type="button" style="width:100%;text-align:left;color:white">${av(u)}<span><b>${esc(u.name||u.username)} ${rankEmoji(u.role)} <span class="rank">${esc(u.role||'member')}</span></b><span>@${esc(u.username||'')} · ${on?'online · '+esc(p.currentPage||'active'):'offline'}</span></span><span class="status-dot" style="opacity:${on?1:.25}"></span></button>`}).join('')||'<div class="empty">No users found.</div>';if(selected)renderSelected()}function renderSelected(){const u=users[selected];if(!u){selectedUser.innerHTML='<p class="muted">Pick a user to edit.</p>';return}const rankOptions=['member','helper','mod','admin','tester','owner','banned'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('');selectedUser.innerHTML=`<div class="profile-hero" style="margin-bottom:14px">${av(u)}<div><h2 style="margin:0">${esc(u.name||u.username)} ${rankEmoji(u.role)}</h2><p class="muted">@${esc(u.username)} · ${esc(u.uid)}</p><span class="rank">${esc(u.role||'member')}</span></div></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px"><div class="field"><label>Username</label><input id="editUsername" value="${esc(u.username||'')}"></div><div class="field"><label>Display Name</label><input id="editName" value="${esc(u.name||'')}"></div><div class="field"><label>New Password</label><input id="editPass" type="password" placeholder="leave blank"></div><div class="field"><label>Rank</label><select id="editRank" class="search">${rankOptions}</select></div></div><div class="field"><label>Bio</label><textarea id="editBio">${esc(u.bio||'')}</textarea></div><div class="field"><label>Add Moderator Note</label><textarea id="newUserNote" placeholder="Private staff note about this user..."></textarea></div><div class="admin-actions"><button class="btn" data-act="saveNote" type="button">Add Note</button><button class="btn primary" data-act="saveUser" type="button">Save Changes</button><button class="btn" data-act="removePfp" type="button">Remove PFP</button><button class="btn" data-act="warn" type="button">Warn</button><button class="btn danger" data-act="banUser" type="button">Ban</button><button class="btn" data-act="unbanUser" type="button">Unban</button><button class="btn" data-act="timeout" type="button">Time-out</button><button class="btn" data-act="untimeout" type="button">Un-timeout</button><button class="btn" data-act="mute" type="button">Mute Chat</button><button class="btn" data-act="unmute" type="button">Unmute</button><button class="btn danger" data-act="deleteUser" type="button">Delete Account</button></div>${protectedUser(u)?'<p class="muted">Protected account: owner/tester cannot be banned, muted, timed out, or deleted.</p>':''}`;renderDMViewer();renderNotes()}async function usernameTaken(username,exceptUid){const clean=cleanUser(username);if(!clean)return true;return Object.values(users).some(u=>u.uid!==exceptUid&&String(u.username||'').toLowerCase()===clean)}async function saveUser(){const u=users[selected];if(!u)return;const username=cleanUser(editUsername.value);if(!username)return alert('Username required.');if(await usernameTaken(username,selected))return alert('That username is already taken.');const patch={username,name:cleanName(editName.value)||username,bio:editBio.value.trim().slice(0,260)};if(canEditRanks()){if(protectedUser(u)&&!canOverrideProtected()&&!['owner','tester'].includes(editRank.value))return alert('Owner/tester accounts are protected.');patch.role=editRank.value;patch.rank=editRank.value}else if(editRank.value!==u.role)alert('Only owner can change ranks.');if(patch.role==='banned'&&protectedUser(u)&&!canOverrideProtected())return alert('Owner/tester accounts cannot be banned.');if(editPass.value.trim())patch.passwordHash=await FGAuth.sha256(editPass.value.trim());await db.ref('siteUsers/'+selected).update(patch);await db.ref('siteUsernames/'+username).set(selected);alert('Saved.')}async function createNewAccount(){const username=cleanUser(newUsername.value),name=cleanName(newName.value)||username,pass=newPass.value,role=canEditRanks()?newRank.value:'member';if(!username||!pass){addStatus.textContent='Username and password required.';return}if(await usernameTaken(username,'')){addStatus.textContent='That username is already taken.';return}const uid='user-'+username;const user={uid,username,name,role,rank:role,passwordHash:await FGAuth.sha256(pass),bio:'',photoURL:'',recentGames:[],createdAt:Date.now(),createdBy:me.uid};await db.ref('siteUsers/'+uid).set(user);await db.ref('siteUsernames/'+username).set(uid);addStatus.textContent='Account created.';newUsername.value=newName.value=newPass.value='';setTimeout(()=>addModal.classList.remove('open'),600)}async function moderate(act){const u=users[selected];if(!u)return;if(protectedUser(u)&&!canOverrideProtected()&&['timeout','untimeout','mute','deleteUser','banUser','unbanUser'].includes(act))return alert('Owner/tester accounts are protected.');if(act==='removePfp')await db.ref('siteUsers/'+selected).update({photoURL:''});if(act==='banUser')await db.ref('siteUsers/'+selected).update({role:'banned',rank:'banned',banReason:'Banned from admin panel',bannedAt:Date.now()});if(act==='unbanUser')await db.ref('siteUsers/'+selected).update({role:'member',rank:'member',banReason:null,banUntil:null,bannedAt:null});if(act==='untimeout')await db.ref('siteUsers/'+selected).update({timeoutUntil:null});if(act==='warn')await db.ref('siteNotifications/'+selected).push({text:'Admin warning: please follow the rules.',createdAt:Date.now(),seen:false});if(act==='timeout')await db.ref('siteUsers/'+selected).update({timeoutUntil:Date.now()+15*60*1000});if(act==='mute')await db.ref('siteUsers/'+selected).update({mutedUntil:Date.now()+15*60*1000});if(act==='unmute')await db.ref('siteUsers/'+selected).update({mutedUntil:null,muteReason:null});if(act==='deleteUser'){if(confirm('Delete this account?')){await db.ref('siteUsers/'+selected).remove();if(u.username)await db.ref('siteUsernames/'+u.username).remove();selected=null;renderSelected()}}}function renderDMViewer(){if(!selected){dmViewer.innerHTML='<p class="muted">Select a user to see their DMs.</p>';return}db.ref('siteDMIndex/'+selected).once('value').then(s=>{const idx=s.val()||{};const arr=Object.entries(idx).sort((a,b)=>Number(b[1].lastAt||0)-Number(a[1].lastAt||0));dmViewer.innerHTML=arr.map(([cid,c])=>`<a class="person" href="messages.html?with=${encodeURIComponent(c.withUid||'')}"><span class="avatar">💬</span><span><b>${esc(c.fromName||c.fromUsername||c.withUid||'conversation')}</b><span>${esc(c.lastText||'')}</span></span></a>`).join('')||'<p class="muted">No DMs indexed for this user.</p>'})}
+function renderNotes(){if(!selected||!window.notesViewer){if(window.notesViewer)notesViewer.innerHTML='<p class="muted">Select a user to see notes.</p>';return}db.ref('siteUserNotes/'+selected).once('value').then(s=>{const notes=s.val()||{};const arr=Object.entries(notes).sort((a,b)=>Number(b[1].createdAt||0)-Number(a[1].createdAt||0));notesViewer.innerHTML=arr.map(([id,n])=>`<div class="person"><span class="avatar">📝</span><span><b>${esc(n.byName||n.by||'staff')}</b><span>${esc(n.text||'')}</span><span class="muted">${n.createdAt?new Date(n.createdAt).toLocaleString():''}</span></span></div>`).join('')||'<p class="muted">No notes for this user.</p>'})}document.addEventListener('fg-auth-ready',async()=>{me=window.FGUser;if(!isCruzUser(me)&&power(me.role)<3){document.body.innerHTML='<main style="padding:30px"><h1>Access denied</h1><p>You need admin rank or higher.</p></main>';return}adminRank.textContent=me.role;await FGAuth.initFirebase();db=FGAuth.db();gameEditor.style.display=canGame()?'block':'none';gamePermText.textContent=canGame()?'You can add/edit games.':'Admins can moderate accounts, but only owner/tester can add games.';db.ref('siteUsers').on('value',s=>{users=s.val()||{};renderUsers()});db.ref('sitePresence').on('value',s=>{presence=s.val()||{};renderUsers()});db.ref('siteCustomCommands').on('value',s=>{customCommands=s.val()||{};renderCustomCommands()});db.ref('homepageAdmin/games').on('value',s=>{gamesAdmin=s.val()||{};renderGamesAdmin()})});userSearch.addEventListener('input',renderUsers);usersList.addEventListener('click',e=>{const b=e.target.closest('[data-select]');if(b){selected=b.dataset.select;renderUsers();renderSelected()}});selectedUser.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b)return;if(b.dataset.act==='saveUser')saveUser();else if(b.dataset.act==='saveNote'){const text=(newUserNote?.value||'').trim();if(!selected||!text)return;await db.ref('siteUserNotes/'+selected).push({text:text.slice(0,500),by:me.uid,byName:me.username||me.name,createdAt:Date.now()});newUserNote.value='';renderNotes();}else moderate(b.dataset.act)});openAddAccount.onclick=()=>addModal.classList.add('open');closeAdd.onclick=()=>addModal.classList.remove('open');createAccount.onclick=createNewAccount;if(window.saveCustomCommand)saveCustomCommand.onclick=saveCommand;if(window.deleteCustomCommand)deleteCustomCommand.onclick=deleteCommand;if(window.customCommandsList)customCommandsList.addEventListener('click',e=>{const b=e.target.closest('[data-cmd]');if(b)fillCustomCommand(b.dataset.cmd)});
+let customCommands={};
+function cleanCmdName(s){return String(s||'').toLowerCase().trim().replace(/^\//,'').replace(/[^a-z0-9_-]/g,'').slice(0,24)}
+function renderCustomCommands(){
+  if(!window.customCommandsList)return;
+  const arr=Object.entries(customCommands||{}).sort((a,b)=>a[0].localeCompare(b[0]));
+  customCommandsList.innerHTML=arr.map(([name,c])=>`<button class="person" data-cmd="${esc(name)}" type="button" style="width:100%;text-align:left;color:white"><span class="avatar">${esc(c.emoji||'⚡')}</span><span><b>/${esc(name)}</b><span>${esc(c.text||'custom command')}</span></span></button>`).join('')||'<p class="muted">No custom commands yet.</p>';
+}
+function fillCustomCommand(name){
+  const c=customCommands[name]||{};
+  cmdName.value=name||'';
+  cmdEmoji.value=c.emoji||'';
+  cmdText.value=c.text||'';
+  cmdDuration.value=c.duration||2400;
+  cmdShake.value=String(!!c.shake);
+  cmdRedirect.value=String(!!c.redirect);
+  cmdRedirectUrl.value=c.redirectUrl||'';
+  cmdSoundUrl.value=c.soundUrl||'';
+  cmdImageUrl.value=c.imageUrl||'';
+}
+async function saveCommand(){
+  if(!canGame())return alert('Only owner/tester/cruz can create commands.');
+  const name=cleanCmdName(cmdName.value);
+  if(!name){cmdStatus.textContent='Command name required.';return}
+  const payload={
+    emoji:cmdEmoji.value.trim()||'🎵',
+    text:cmdText.value.trim()||name,
+    duration:Number(cmdDuration.value||2400),
+    shake:cmdShake.value==='true',
+    redirect:cmdRedirect.value==='true',
+    redirectUrl:cmdRedirectUrl.value.trim(),
+    soundUrl:cmdSoundUrl.value.trim(),
+    imageUrl:cmdImageUrl.value.trim(),
+    updatedAt:Date.now(),
+    updatedBy:me.uid
+  };
+  await db.ref('siteCustomCommands/'+name).set(payload);
+  cmdStatus.textContent='Saved /'+name;
+}
+async function deleteCommand(){
+  if(!canGame())return alert('Only owner/tester/cruz can delete commands.');
+  const name=cleanCmdName(cmdName.value);
+  if(!name)return;
+  await db.ref('siteCustomCommands/'+name).remove();
+  cmdStatus.textContent='Deleted /'+name;
+  fillCustomCommand('');
+}
 
-    function setStatus(text) { el.saveStatus.textContent = text; }
-    function setEditorStatus(text) { el.editorStatus.textContent = text; }
-    function slugify(s) { return String(s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+sendAnnounce.onclick=async()=>{const text=announceText.value.trim();if(!text)return;const id='ann-'+Date.now();await db.ref('siteAnnouncements/current').set({id,title:'Announcement',text,createdAt:Date.now(),from:me.uid});setTimeout(()=>db.ref('siteAnnouncements/current').once('value').then(s=>{const v=s.val();if(v&&v.id===id)db.ref('siteAnnouncements/current').remove()}),6000);announceText.value=''};
+let gamesAdmin={};
+function cleanGameId(s){return String(s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,50)}
+function boolVal(v){return String(v)==='true'}
+function fillGameForm(g={}){
+  gameId.value=g.id||'';
+  gameTitle.value=g.title||'';
+  gameUrl.value=g.embedUrl||g.url||'';
+  if(window.gameSourceUrl) gameSourceUrl.value=g.sourceUrl||g.embedUrl||'';
+  gameThumb.value=g.thumbnailUrl||g.thumb||'';
+  gameDesc.value=g.description||'';
+  if(window.gameTag) gameTag.value=g.tag||g.type||'game';
+  if(window.gameType) gameType.value=g.type||'game';
+  if(window.gameOpenMode) gameOpenMode.value=g.openMode||'embed';
+  if(window.gameLocked) gameLocked.value=String(!!g.locked);
+  if(window.gameHidden) gameHidden.value=String(!!g.hidden);
+  if(window.gamePage) gamePage.value=Number(g.page||1);
+  if(window.gameOrder) gameOrder.value=Number(g.order||1);
+  if(window.gameStatus) gameStatus.textContent=g.id?'Editing '+g.id:'New game';
+}
+function currentGamePayload(){
+  const id=cleanGameId(gameId.value||gameTitle.value);
+  return {
+    id,
+    title:gameTitle.value.trim(),
+    description:gameDesc.value.trim(),
+    embedUrl:gameUrl.value.trim(),
+    sourceUrl:(window.gameSourceUrl?.value||gameUrl.value).trim(),
+    thumbnailUrl:gameThumb.value.trim(),
+    tag:(window.gameTag?.value||'game').trim()||'game',
+    type:window.gameType?.value||'game',
+    openMode:window.gameOpenMode?.value||'embed',
+    locked:boolVal(window.gameLocked?.value||false),
+    hidden:boolVal(window.gameHidden?.value||false),
+    page:Number(window.gamePage?.value||1),
+    order:Number(window.gameOrder?.value||1),
+    updatedAt:Date.now(),
+    updatedBy:me?.uid||''
+  };
+}
+function renderGamesAdmin(){
+  if(!window.gameSelect||!window.gamesAdminList)return;
+  const arr=Object.values(gamesAdmin||{}).filter(g=>g&&g.id).sort((a,b)=>(Number(a.page||1)-Number(b.page||1))||(Number(a.order||0)-Number(b.order||0))||String(a.title||a.id).localeCompare(String(b.title||b.id)));
+  gameSelect.innerHTML='<option value="">New game...</option>'+arr.map(g=>`<option value="${esc(g.id)}">${esc(g.title||g.id)} ${g.locked?'🔒':''} ${g.hidden?'🙈':''}</option>`).join('');
+  gamesAdminList.innerHTML=arr.map(g=>`<button class="person" data-game="${esc(g.id)}" type="button" style="width:100%;text-align:left;color:white"><span class="avatar">${g.locked?'🔒':'🎮'}</span><span><b>${esc(g.title||g.id)}</b><span>${esc(g.id)} · ${g.locked?'locked':'unlocked'} · ${g.hidden?'hidden':'visible'}</span></span></button>`).join('')||'<p class="muted">No games found.</p>';
+  if(window.gameStatus)gameStatus.textContent=arr.length+' games loaded';
+}
+async function saveGameRecord(){
+  if(!canGame())return alert('Only owner/tester/cruz can save games.');
+  const g=currentGamePayload();
+  if(!g.id||!g.title||!g.embedUrl)return alert('ID, title, and URL required.');
+  await db.ref('homepageAdmin/games/'+g.id).update(g);
+  gameId.value=g.id;
+  alert('Game saved.');
+}
+async function setGameLock(value){
+  if(!canGame())return alert('Only owner/tester/cruz can lock games.');
+  const id=cleanGameId(gameId.value);
+  if(!id)return alert('Pick a game first.');
+  await db.ref('homepageAdmin/games/'+id).update({locked:value,updatedAt:Date.now(),updatedBy:me.uid});
+  gameLocked.value=String(value);
+}
+async function deleteGameRecord(){
+  if(!canGame())return alert('Only owner/tester/cruz can delete games.');
+  const id=cleanGameId(gameId.value);
+  if(!id)return alert('Pick a game first.');
+  if(!confirm('Delete '+id+'?'))return;
+  await db.ref('homepageAdmin/games/'+id).remove();
+  fillGameForm({});
+}
 
-    function isSafeUrl(value='') {
-      const v = String(value || '').trim();
-      if (!v) return true;
-      if (/^(javascript|data|vbscript|file|blob):/i.test(v)) return false;
-      if (/^https:\/\//i.test(v)) return true;
-      return /^[a-z0-9_./?#=&%-]+$/i.test(v) && !/^\/\//.test(v);
-    }
+if(window.saveGame)saveGame.onclick=saveGameRecord;
+if(window.newGame)newGame.onclick=()=>fillGameForm({});
+if(window.lockGame)lockGame.onclick=()=>setGameLock(true);
+if(window.unlockGame)unlockGame.onclick=()=>setGameLock(false);
+if(window.deleteGame)deleteGame.onclick=deleteGameRecord;
+if(window.gameSelect)gameSelect.onchange=()=>fillGameForm(gamesAdmin[gameSelect.value]||{});
+if(window.gamesAdminList)gamesAdminList.addEventListener('click',e=>{const b=e.target.closest('[data-game]');if(!b)return;gameSelect.value=b.dataset.game;fillGameForm(gamesAdmin[b.dataset.game]||{});});
 
-    function validateGameUrls(game) {
-      return isSafeUrl(game.embedUrl) && isSafeUrl(game.sourceUrl);
-    }
-
-    function updatePreview() {
-      const enabled = el.announcementEnabled.value === 'true';
-      const text = el.announcementText.value.trim();
-      el.patchNotesContent.textContent = el.patchNotesInput.value.trim() || DEFAULTS.patchNotes;
-      el.patchNotesUpdated.textContent = el.patchNotesUpdatedInput.value.trim() || DEFAULTS.patchNotesUpdated;
-      if (enabled && text) { el.announcePreview.style.display='block'; el.announcePreview.textContent=text; } else { el.announcePreview.style.display='none'; el.announcePreview.textContent=''; }
-    }
-    function fillGlobalForm(settings={}) { const m={...DEFAULTS,...settings}; el.heroSubtitle.value=m.heroSubtitle; el.announcementText.value=m.announcementText; el.announcementEnabled.value=String(Boolean(m.announcementEnabled)); el.libraryTitle.value=m.libraryTitle; el.libraryCopy.value=m.libraryCopy; el.siteMode.value=m.siteMode||'normal'; el.patchNotesInput.value=m.patchNotes||DEFAULTS.patchNotes; el.patchNotesUpdatedInput.value=m.patchNotesUpdated||DEFAULTS.patchNotesUpdated; updatePreview(); }
-    function blankGame() { return { id:'', title:'', description:'', embedUrl:'', sourceUrl:'', thumbnailUrl:'', thumbText:'', tag:'game', type:'game', page:1, order:Object.keys(currentGameStates).length+1, themeClass:'custom-card', cardStyle:'', textColor:'', platform:'browser', statusText:'live', addedText:'new', credits:'original creators', sourceLabel:'launch url', openMode:'embed', hidden:false, locked:false }; }
-    function fillGameForm(game={}) { const g={...blankGame(),...game}; el.gameId.value=g.id||''; el.gameTitle.value=g.title||''; el.gameDescription.value=g.description||''; el.gameEmbedUrl.value=g.embedUrl||''; el.gameSourceUrl.value=g.sourceUrl||''; el.gameThumbnailUrl.value=g.thumbnailUrl||''; el.gameThumbText.value=g.thumbText||''; el.gameTag.value=g.tag||''; el.gameType.value=g.type||'game'; el.gamePage.value=g.page||1; el.gameOrder.value=g.order||1; el.gameThemeClass.value=g.themeClass||''; el.gameCardStyle.value=g.cardStyle||''; el.gameTextColor.value=g.textColor||''; el.gamePlatform.value=g.platform||''; el.gameStatusText.value=g.statusText||''; el.gameAddedText.value=g.addedText||''; el.gameCredits.value=g.credits||''; el.gameSourceLabel.value=g.sourceLabel||''; el.gameOpenMode.value=g.openMode||'embed'; el.gameHidden.value=String(Boolean(g.hidden)); el.gameLocked.value=String(Boolean(g.locked)); }
-    function collectGameForm() { const title=el.gameTitle.value.trim(); const id = slugify(el.gameId.value) || slugify(title); return { id, title, description:el.gameDescription.value.trim(), embedUrl:el.gameEmbedUrl.value.trim(), sourceUrl:el.gameSourceUrl.value.trim() || el.gameEmbedUrl.value.trim(), thumbnailUrl:el.gameThumbnailUrl.value.trim(), thumbText:el.gameThumbText.value.trim(), tag:el.gameTag.value.trim() || el.gameType.value, type:el.gameType.value, page:Number(el.gamePage.value||1), order:Number(el.gameOrder.value||1), themeClass:el.gameThemeClass.value.trim() || 'custom-card', cardStyle:el.gameCardStyle.value.trim(), textColor:el.gameTextColor.value.trim(), platform:el.gamePlatform.value.trim() || 'browser', statusText:el.gameStatusText.value.trim() || 'live', addedText:el.gameAddedText.value.trim() || 'new', credits:el.gameCredits.value.trim() || 'original creators', sourceLabel:el.gameSourceLabel.value.trim() || 'launch url', openMode:el.gameOpenMode.value, hidden:el.gameHidden.value==='true', locked:el.gameLocked.value==='true' }; }
-    function isValidGameRecord(game) {
-      return !!(
-        game &&
-        typeof game === 'object' &&
-        typeof game.id === 'string' &&
-        game.id.trim() &&
-        typeof game.title === 'string' &&
-        game.title.trim() &&
-        (
-          (typeof game.embedUrl === 'string' && game.embedUrl.trim()) ||
-          (typeof game.sourceUrl === 'string' && game.sourceUrl.trim())
-        )
-      );
-    }
-    function getRenderableGames() {
-      return Object.values(currentGameStates || {}).filter(isValidGameRecord);
-    }
-    async function cleanupBrokenEntries() {
-      const entries = Object.entries(currentGameStates || {});
-      const badKeys = entries
-        .filter(([key, game]) => !isValidGameRecord(game) || key !== game.id)
-        .map(([key]) => key);
-
-      if (!badKeys.length) return 0;
-
-      await Promise.all(badKeys.map((key) => remove(ref(db, `homepageAdmin/games/${key}`))));
-      badKeys.forEach((key) => { delete currentGameStates[key]; });
-      return badKeys.length;
-    }
-    function renderGamesList() {
-      const games=getRenderableGames().sort((a,b)=>(Number(a.page||1)-Number(b.page||1))||(Number(a.order||0)-Number(b.order||0))||String(a.title).localeCompare(String(b.title)));
-      el.gameCount.textContent=String(games.length);
-      el.gamesList.innerHTML='';
-      games.forEach((game)=>{
-        const row=document.createElement('div');
-        row.className='game-row';
-        row.innerHTML=`<div class="game-head"><div><div class="game-title">${game.title}</div><div class="game-meta">id: ${game.id} · page ${game.page} · ${game.type}<br>${game.embedUrl||game.sourceUrl||''}<br>${game.description||''}</div></div><div class="state-pills"><span class="pill ${game.hidden?'hidden':'live'}">${game.hidden?'hidden':'visible'}</span><span class="pill ${game.locked?'locked':'live'}">${game.locked?'locked':'unlocked'}</span></div></div><div class="row-actions"><button class="chip-btn primary" data-action="edit" data-id="${game.id}" type="button">edit</button><button class="chip-btn danger" data-action="hide" data-id="${game.id}" type="button">hide</button><button class="chip-btn good" data-action="unhide" data-id="${game.id}" type="button">undo hide</button><button class="chip-btn warn" data-action="lock" data-id="${game.id}" type="button">lock</button><button class="chip-btn good" data-action="unlock" data-id="${game.id}" type="button">undo lock</button><button class="chip-btn soft" data-action="delete" data-id="${game.id}" type="button">delete</button></div>`;
-        el.gamesList.appendChild(row);
-      });
-    }
-    async function saveGameState(id, patch) { const next={ ...(currentGameStates[id]||blankGame()), ...patch, id }; await set(ref(db, `homepageAdmin/games/${id}`), next); currentGameStates[id]=next; renderGamesList(); setStatus(`saved ${id}`); }
-    async function loadAll() {
-      try {
-        el.firebaseState.textContent='loading';
-        const [settingsSnap,gamesSnap]=await Promise.all([get(settingsRef),get(gamesRef)]);
-        fillGlobalForm(settingsSnap.exists()?settingsSnap.val():DEFAULTS);
-        currentGameStates=gamesSnap.exists()?gamesSnap.val():{};
-        const removedCount = await cleanupBrokenEntries();
-        renderGamesList();
-        el.firebaseState.textContent='connected';
-        setStatus(removedCount ? `firebase data loaded — removed ${removedCount} broken entr${removedCount===1?'y':'ies'}` : 'firebase data loaded');
-      } catch(error) {
-        console.error(error);
-        el.firebaseState.textContent='error';
-        setStatus('could not load firebase data');
-      }
-    }
-    async function ensureDefaults() { const snap=await get(gamesRef); if (!snap.exists()) await set(gamesRef, Object.fromEntries(DEFAULT_GAMES.map(g=>[g.id,g]))); const settingsSnap=await get(settingsRef); if(!settingsSnap.exists()) await set(settingsRef, DEFAULTS); }
-    el.saveGlobalBtn.addEventListener('click', async ()=>{ const payload={ heroSubtitle:el.heroSubtitle.value.trim()||DEFAULTS.heroSubtitle, announcementText:el.announcementText.value.trim(), announcementEnabled:el.announcementEnabled.value==='true', libraryTitle:el.libraryTitle.value.trim()||DEFAULTS.libraryTitle, libraryCopy:el.libraryCopy.value.trim()||DEFAULTS.libraryCopy, siteMode:el.siteMode.value||'normal', patchNotes:el.patchNotesInput.value.trim()||DEFAULTS.patchNotes, patchNotesUpdated:el.patchNotesUpdatedInput.value.trim()||DEFAULTS.patchNotesUpdated }; try { await set(settingsRef,payload); setStatus('global settings saved'); updatePreview(); } catch(error) { console.error(error); setStatus('could not save global settings'); } });
-    el.resetGlobalBtn.addEventListener('click', ()=>{ fillGlobalForm(DEFAULTS); setStatus('form reset to defaults — click save to publish'); });
-    el.saveGameBtn.addEventListener('click', async ()=>{ const game=collectGameForm(); if(!game.id || !game.title || !game.embedUrl) { setEditorStatus('id, title, and embed or launch url are required'); return; } if(!validateGameUrls(game)) { setEditorStatus('only https external links or local relative paths are allowed'); return; } try { await set(ref(db, `homepageAdmin/games/${game.id}`), game); currentGameStates[game.id]=game; renderGamesList(); setEditorStatus(`saved ${game.title}`); fillGameForm(game); } catch(error) { console.error(error); setEditorStatus('could not save game'); } });
-    el.newGameBtn.addEventListener('click', ()=>{ fillGameForm(blankGame()); setEditorStatus('blank form ready'); });
-    el.seedDefaultsBtn.addEventListener('click', async ()=>{ try { await set(gamesRef, Object.fromEntries(DEFAULT_GAMES.map(g=>[g.id,g]))); setEditorStatus('default catalog restored'); loadAll(); } catch(error) { console.error(error); setEditorStatus('could not restore defaults'); } });
-    el.refreshBtn.addEventListener('click', loadAll);
-    el.announcementText.addEventListener('input', updatePreview); el.announcementEnabled.addEventListener('change', updatePreview); el.patchNotesInput.addEventListener('input', updatePreview); el.patchNotesUpdatedInput.addEventListener('input', updatePreview);
-    el.patchNotesBtn.addEventListener('click', ()=>{ el.patchModal.classList.add('open'); el.patchModal.setAttribute('aria-hidden','false'); updatePreview(); });
-    el.closePatchNotesBtn.addEventListener('click', ()=>{ el.patchModal.classList.remove('open'); el.patchModal.setAttribute('aria-hidden','true'); });
-    el.patchModal.addEventListener('click', (e)=>{ if(e.target===el.patchModal) { el.patchModal.classList.remove('open'); el.patchModal.setAttribute('aria-hidden','true'); } });
-    el.gamesList.addEventListener('click', async (event)=>{ const button=event.target.closest('button[data-action]'); if(!button) return; const id=button.dataset.id; const action=button.dataset.action; try { if(action==='edit') { fillGameForm(currentGameStates[id]); setEditorStatus(`editing ${id}`); window.scrollTo({ top: 0, behavior: 'smooth' }); return; } if(action==='hide') await saveGameState(id, { hidden:true }); if(action==='unhide') await saveGameState(id, { hidden:false }); if(action==='lock') await saveGameState(id, { locked:true }); if(action==='unlock') await saveGameState(id, { locked:false }); if(action==='delete') { await remove(ref(db, `homepageAdmin/games/${id}`)); delete currentGameStates[id]; renderGamesList(); setEditorStatus(`deleted ${id}`); } } catch(error) { console.error(error); setStatus(`could not ${action} ${id}`); } });
-    fillGlobalForm(DEFAULTS); fillGameForm(blankGame()); renderGamesList(); ensureDefaults().then(loadAll);
-  </script>
-</body>
-</html>
+</script></body></html>
