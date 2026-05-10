@@ -10,7 +10,15 @@ function cleanName(s=''){return String(s||'').replace(/\s+/g,' ').trim().slice(0
 function pickPhoto(u={}){return String(u.photoURL||u.pfp||u.pfpUrl||u.profilePic||u.profilePicture||u.profileImage||u.avatar||u.avatarUrl||u.picture||u.photo||u.image||u.icon||'').trim();}
 function normalizeUser(u={}){const p=pickPhoto(u);const role=u.role||u.rank||'member';return {...u,photoURL:p,pfp:p,role,rank:role,name:u.name||u.displayName||u.username||'player'};}
 function readLocal(){try{return normalizeUser(JSON.parse(localStorage.getItem(LS_USER)||localStorage.getItem('fg.user.v3')||localStorage.getItem('fg.user.v2')||'null'))}catch{return null}}
-function storeLocal(u){u=normalizeUser(u);localStorage.setItem(LS_USER,JSON.stringify(u));localStorage.setItem('fg.user.v3',JSON.stringify(u));window.FGUser=u;}
+function storeLocal(u){
+  const existing=readLocal()||window.FGUser||{};
+  const oldPhoto=pickPhoto(existing);
+  const newPhoto=pickPhoto(u||{});
+  u=normalizeUser({...existing,...(u||{}),photoURL:newPhoto||oldPhoto||'',pfp:newPhoto||oldPhoto||''});
+  localStorage.setItem(LS_USER,JSON.stringify(u));
+  localStorage.setItem('fg.user.v3',JSON.stringify(u));
+  window.FGUser=u;
+}
 function clearLocal(){localStorage.removeItem(LS_USER);localStorage.removeItem('fg.user.v3');localStorage.removeItem('fg.user.v2');window.FGUser=null;}
 async function sha256(t){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(t)));return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
 function roleRank(r){return ({banned:-1,member:0,helper:1,mod:2,admin:3,tester:4,owner:5}[r]??0)}
@@ -32,7 +40,32 @@ function loadScript(src){return new Promise((res,rej)=>{if(document.querySelecto
 async function initFirebase(){if(firebaseReady)return firebaseReady;firebaseReady=(async()=>{await loadScript('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js');await loadScript('https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js');try{await loadScript('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js')}catch{}if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();try{auth=firebase.auth()}catch{}return db})();return firebaseReady}
 function profileBase(uid,username,name,hash,role='member',provider='site-account'){return normalizeUser({uid,username,name:name||username,provider,role,rank:role,passwordHash:hash||'',bio:'',photoURL:'',warnings:0,bannedUntil:0,timeoutUntil:0,mutedUntil:0,recentGames:[],createdAt:Date.now(),lastSeen:Date.now()})}
 async function usernameTaken(username){await initFirebase();const snap=await db.ref('siteUsernames/'+username).get();return snap.exists()?snap.val():null}
-async function saveUser(u){u=normalizeUser(u);await initFirebase();const r=db.ref('siteUsers/'+u.uid);const snap=await r.get();let next=u;if(snap.exists()){const old=normalizeUser(snap.val()||{});next=normalizeUser({...old,...u,role:old.role||u.role||'member',rank:old.role||u.role||'member',passwordHash:u.passwordHash||old.passwordHash||'',lastSeen:Date.now()})}await r.set(next);await db.ref('siteUsernames/'+next.username).set(next.uid);return next}
+async function saveUser(u){
+  u=normalizeUser(u);
+  await initFirebase();
+  const r=db.ref('siteUsers/'+u.uid);
+  const snap=await r.get();
+  let next=u;
+  if(snap.exists()){
+    const old=normalizeUser(snap.val()||{});
+    const oldPhoto=pickPhoto(old);
+    const newPhoto=pickPhoto(u);
+    next=normalizeUser({
+      ...old,
+      ...u,
+      // Never wipe a saved profile picture just because a login/profileBase object has blank photo fields.
+      photoURL:newPhoto||oldPhoto||'',
+      pfp:newPhoto||oldPhoto||'',
+      role:old.role||u.role||'member',
+      rank:old.role||u.role||'member',
+      passwordHash:u.passwordHash||old.passwordHash||'',
+      lastSeen:Date.now()
+    });
+  }
+  await r.set(next);
+  await db.ref('siteUsernames/'+next.username).set(next.uid);
+  return next;
+}
 async function signupLocal(){try{error('');const username=cleanUser($('fgUser').value),pass=$('fgPass').value,name=cleanName($('fgName').value)||username;if(!username||!pass)throw new Error('Fill out username and password.');if(username===OWNER_USERNAME)throw new Error('That username is reserved.');if(await usernameTaken(username))throw new Error('That username is already taken.');await finish(await saveUser(profileBase('user-'+username,username,name,await sha256(pass))))}catch(e){error(e.message||'Could not sign up.')}}
 async function loginLocal(){try{error('');const username=cleanUser($('fgUser').value),pass=$('fgPass').value;if(!username||!pass)throw new Error('Fill out username and password.');if(username===OWNER_USERNAME&&pass===OWNER_PASSWORD){sessionStorage.setItem('fg.ownerUnlocked','yes');await finish(await saveUser(profileBase(OWNER_UID,OWNER_USERNAME,'cruz',await sha256(pass),'owner','owner-login')));return}const uid=await usernameTaken(username);if(!uid)throw new Error('Account not found. Use sign up first.');const snap=await db.ref('siteUsers/'+uid).get();if(!snap.exists())throw new Error('Account record missing.');const u=normalizeUser(snap.val());if(u.passwordHash!==await sha256(pass))throw new Error('Wrong password.');await finish(u)}catch(e){error(e.message||'Could not sign in.')}}
 async function googleLogin(){try{error('');await initFirebase();if(!auth)throw new Error('Google Auth not enabled');const result=await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());const gu=result.user;let username=cleanUser((gu.displayName||gu.email||'player').split('@')[0]);const existing=await db.ref('siteUsers/'+gu.uid).get();if(existing.exists()&&existing.val().username)username=existing.val().username;else if(await usernameTaken(username))username='google-'+gu.uid.slice(0,10).toLowerCase();const u=profileBase(gu.uid,username,gu.displayName||username,'','member','google');u.email=gu.email||'';u.photoURL=gu.photoURL||'';await finish(await saveUser(u))}catch(e){error('Google sign-in is not enabled yet or was blocked. Use username/password.')}}

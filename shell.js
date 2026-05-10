@@ -10,7 +10,8 @@
   function canAdmin(u){return (rankPower[u?.role||u?.rank||'member']??0)>=3;}
   function logout(){
     try{
-      localStorage.clear();
+      // Log out without wiping saved profile data/PFP caches.
+      ['fg.user.v4','fg.user.v3','fg.user.v2','gamehub_user','currentUser','authUser','signedInUser','loggedInUser'].forEach(k=>localStorage.removeItem(k));
       sessionStorage.clear();
     }catch(e){}
     location.href='index.html';
