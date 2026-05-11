@@ -138,6 +138,9 @@ function openMsgTools(messageId, anchor){
 async function deleteMessage(messageId){
   if(!canManageMessage({})) return;
   if(!confirm('Delete this message?')) return;
+  const snap=await db.ref(DB_ROOT+'/messages/'+messageId).get().catch(()=>null);
+  const old=snap&&snap.exists()?snap.val():{};
+  if(old&&old.text) await db.ref('siteDeletedMessages/'+messageId).set({...old,deletedAt:Date.now(),deletedBy:me?.uid||'',deletedByName:me?.username||me?.name||'staff'});
   await db.ref(DB_ROOT+'/messages/'+messageId).remove();
   const el=document.querySelector(`[data-mid="${CSS.escape(messageId)}"]`);
   if(el) el.remove();

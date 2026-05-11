@@ -9,6 +9,15 @@
     <a href="admin.html?id=users" class="admin-tab">👥 Users</a>
     <a href="admin.html?id=reports" class="admin-tab">🚩 Reports</a>
     <a href="admin.html?id=analytics" class="admin-tab">📈 Analytics</a>
+    <a href="admin.html?id=appeals" class="admin-tab">⚖️ Appeals</a>
+    <a href="admin.html?id=filters" class="admin-tab">🚫 Word Filters</a>
+    <a href="admin.html?id=alts" class="admin-tab">🕵️ Alt Detector</a>
+    <a href="admin.html?id=search" class="admin-tab">🔎 Message Search</a>
+    <a href="admin.html?id=archive" class="admin-tab">🗑️ Deleted Archive</a>
+    <a href="admin.html?id=staff" class="admin-tab">👮 Staff Stats</a>
+    <a href="admin.html?id=requests" class="admin-tab">🎟️ Game Requests</a>
+    <a href="admin.html?id=scheduler" class="admin-tab">⏰ Scheduler</a>
+    <a href="admin.html?id=health" class="admin-tab">🩺 Health</a>
     <a href="admin.html?id=games" class="admin-tab">🎮 Games</a>
     <a href="admin.html?id=chat" class="admin-tab">💬 Chat</a>
     <a href="admin.html?id=announcements" class="admin-tab">📢 News / Announcements</a>
@@ -96,6 +105,67 @@
       </div></section>
     </section>
 
+    <section id="appealsPanel" class="admin-section">
+      <section class="card card-pad"><h2>Ban Appeals</h2><div class="list" id="banAppealsList"><p class="muted">loading appeals...</p></div></section>
+    </section>
+
+    <section id="filtersPanel" class="admin-section">
+      <div class="admin-two">
+        <section class="card card-pad"><h2>Word Filter Manager</h2>
+          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+            <div class="field"><label>Word/Phrase</label><input id="filterWord" placeholder="bad word"></div>
+            <div class="field"><label>Action</label><select id="filterAction" class="search"><option value="delete">auto-delete</option><option value="warn">auto-warn</option><option value="report">auto-report</option><option value="block">block send</option></select></div>
+          </div>
+          <button class="btn primary" id="saveFilter" type="button">Save Filter</button>
+          <button class="btn danger" id="deleteFilter" type="button">Delete Selected</button>
+          <p class="muted" id="filterStatus">ready</p>
+        </section>
+        <section class="card card-pad"><h2>Current Filters</h2><div class="list" id="filtersList"><p class="muted">loading...</p></div></section>
+      </div>
+    </section>
+
+    <section id="altsPanel" class="admin-section">
+      <section class="card card-pad"><h2>Alt Account Detector</h2><p class="muted">Flags when a banned account and another account share a device and were created 1-30 minutes apart. Also compares display names.</p><div class="list" id="altsList"><p class="muted">loading...</p></div></section>
+    </section>
+
+    <section id="searchPanel" class="admin-section">
+      <section class="card card-pad"><h2>Message Search</h2>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px"><div class="field"><label>Search</label><input id="messageSearchTerm" placeholder="word, display name, username..."></div><div class="field"><label>Mode</label><select id="messageSearchMode" class="search"><option value="all">all messages</option><option value="reported">reported only</option><option value="deleted">deleted archive</option></select></div></div>
+        <button class="btn primary" id="runMessageSearch" type="button">Search</button>
+        <div class="list" id="messageSearchResults" style="margin-top:14px"><p class="muted">Search results will appear here.</p></div>
+      </section>
+    </section>
+
+    <section id="archivePanel" class="admin-section">
+      <section class="card card-pad"><h2>Deleted Message Archive</h2><div class="list" id="deletedArchiveList"><p class="muted">loading archive...</p></div></section>
+    </section>
+
+    <section id="staffPanel" class="admin-section">
+      <section class="card card-pad"><h2>Staff Performance Logs</h2><div class="list" id="staffStatsList"><p class="muted">loading staff stats...</p></div></section>
+    </section>
+
+    <section id="requestsPanel" class="admin-section">
+      <section class="card card-pad"><h2>Game Requests</h2><div class="list" id="gameRequestsList"><p class="muted">loading requests...</p></div></section>
+    </section>
+
+    <section id="schedulerPanel" class="admin-section">
+      <div class="admin-two">
+        <section class="card card-pad"><h2>Announcement Scheduler</h2>
+          <div class="field"><label>Announcement Text</label><textarea id="scheduleText" placeholder="announcement..."></textarea></div>
+          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px"><div class="field"><label>Show At</label><input id="scheduleAt" type="datetime-local"></div><div class="field"><label>Expire Minutes</label><input id="scheduleExpire" type="number" min="1" value="60"></div><div class="field"><label>Repeat</label><select id="scheduleRepeat" class="search"><option value="">none</option><option value="daily">daily</option><option value="weekly">weekly</option></select></div></div>
+          <button class="btn primary" id="saveSchedule" type="button">Schedule</button>
+        </section>
+        <section class="card card-pad"><h2>Scheduled Announcements</h2><div class="list" id="scheduledList"><p class="muted">loading...</p></div></section>
+      </div>
+    </section>
+
+    <section id="healthPanel" class="admin-section">
+      <div class="admin-two">
+        <section class="card card-pad"><h2>Live Site Monitor</h2><div class="admin-metrics mini" id="liveMonitor"></div></section>
+        <section class="card card-pad"><h2>Site Health Checker</h2><div class="list" id="healthList"><p class="muted">checking...</p></div></section>
+      </div>
+    </section>
+
     <section id="gamesPanel" class="admin-section">
       <div class="card card-pad" id="gamesAdmin">
         <h2>Game Tools</h2>
@@ -178,19 +248,79 @@
 
 <div class="modal-lite" id="addModal"><div class="modal-box"><h2 style="margin-top:0">Add Account</h2><div class="field"><label>Username</label><input id="newUsername"></div><div class="field"><label>Display Name</label><input id="newName"></div><div class="field"><label>Password</label><input id="newPass" type="password"></div><div class="field"><label>Rank</label><select id="newRank" class="search"><option>member</option><option>bot</option><option>helper</option><option>mod</option><option>admin</option><option>tester</option><option>owner</option><option>banned</option></select></div><div class="button-row"><button class="btn primary" id="createAccount" type="button">Create</button><button class="btn" id="closeAdd" type="button">Cancel</button></div><p class="muted" id="addStatus"></p></div></div>
 <script src="login-guard.js"></script><script src="shell.js"></script><script>
-const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));let db,me,users={},presence={},selected=null,selectedDirty=false,selectedEditingUid=null;Object.defineProperties(window,{db:{get:()=>db},me:{get:()=>me},users:{get:()=>users},presence:{get:()=>presence}});const power=r=>({banned:-1,member:0,bot:0,helper:1,mod:2,admin:3,tester:4,owner:5}[r]??0);function isCruzUser(u=me){return String(u?.username||'').toLowerCase()==='cruz'}const rankEmoji=r=>({owner:'👑',tester:'🧪',admin:'🛡️',mod:'🔨',helper:'✨',bot:'🤖',banned:'🚫',member:''}[r]||'');function photo(u){return (window.FGAuth?.pickPhoto?.(u))||u?.photoURL||u?.pfp||u?.pfpUrl||u?.profilePic||u?.profilePicture||u?.profileImage||u?.avatar||u?.avatarUrl||u?.picture||u?.photo||u?.image||u?.icon||''}function av(u){const img=photo(u);return img?`<span class="avatar"><img src="${esc(img)}" alt=""></span>`:`<span class="avatar">${esc((u?.name||u?.username||'U').slice(0,1).toUpperCase())}</span>`}function canEditRanks(){return isCruzUser()||power(me?.role)>=5}function canGame(){return isCruzUser()||['owner','tester'].includes(me?.role)}function protectedUser(u){return ['owner','tester'].includes(u?.role)}function canOverrideProtected(){return isCruzUser()}function cleanUser(s){return String(s||'').toLowerCase().trim().replace(/[^a-z0-9_.-]/g,'').slice(0,24)}function cleanName(s){return String(s||'').replace(/\s+/g,' ').trim().slice(0,24)}function renderUsers(){const q=(userSearch.value||'').toLowerCase();const arr=Object.values(users).filter(u=>u&&u.uid).filter(u=>[u.username,u.name,u.role,u.bio].join(' ').toLowerCase().includes(q)).sort((a,b)=>power(b.role)-power(a.role)||String(a.username).localeCompare(String(b.username)));usersList.innerHTML=arr.map(u=>{const p=presence[u.uid]||{},on=p.online&&Date.now()-Number(p.lastSeen||0)<90000;return `<button class="person ${selected===u.uid?'convo-active':''}" data-select="${esc(u.uid)}" type="button" style="width:100%;text-align:left;color:white">${av(u)}<span><b>${esc(u.name||u.username)} ${rankEmoji(u.role)} <span class="rank">${esc(u.role||'member')}</span></b><span>@${esc(u.username||'')} · ${on?'online · '+esc(p.currentPage||'active'):'offline'}</span></span><span class="status-dot" style="opacity:${on?1:.25}"></span></button>`}).join('')||'<div class="empty">No users found.</div>';if(selected && !selectedDirty)renderSelected()}function renderSelected(){selectedEditingUid=selected;const u=users[selected];if(!u){selectedUser.innerHTML='<p class="muted">Pick a user to edit.</p>';return}const rankOptions=['member','bot','helper','mod','admin','tester','owner','banned'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('');selectedUser.innerHTML=`<div class="profile-hero" style="margin-bottom:14px">${av(u)}<div><h2 style="margin:0">${esc(u.name||u.username)} ${rankEmoji(u.role)}</h2><p class="muted">@${esc(u.username)} · ${esc(u.uid)}</p><span class="rank">${esc(u.role||'member')}</span></div></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px"><div class="field"><label>Username</label><input id="editUsername" value="${esc(u.username||'')}"></div><div class="field"><label>Display Name</label><input id="editName" value="${esc(u.name||'')}"></div><div class="field"><label>New Password</label><input id="editPass" type="password" placeholder="leave blank"></div><div class="field"><label>Rank</label><select id="editRank" class="search">${rankOptions}</select></div><div class="field"><label>Name Color</label><input id="editNameColor" value="${esc(u.nameColor||'')}" placeholder="#38bdf8 or red"></div><div class="field"><label>Level</label><input id="editLevel" type="number" min="0" value="${Number(u.level||0)}"></div><div class="field"><label>Custom Tag</label><input id="editCustomTag" maxlength="18" value="${esc(u.customTag||'')}" placeholder="LEGEND / VIP / STAFF"></div></div><div class="field"><label>Bio</label><textarea id="editBio">${esc(u.bio||'')}</textarea></div><div class="field"><label>Add Moderator Note</label><textarea id="newUserNote" placeholder="Private staff note about this user..."></textarea></div><div class="admin-actions"><button class="btn" data-act="saveNote" type="button">Add Note</button><button class="btn primary" data-act="saveUser" type="button">Save Changes</button><button class="btn" data-act="removePfp" type="button">Remove PFP</button><button class="btn" data-act="warn" type="button">Warn</button><button class="btn danger" data-act="banUser" type="button">Ban</button><button class="btn" data-act="unbanUser" type="button">Unban</button><button class="btn" data-act="timeout" type="button">Time-out</button><button class="btn" data-act="untimeout" type="button">Un-timeout</button><button class="btn" data-act="forceLogout" type="button">Log Out User</button><button class="btn" data-act="mute" type="button">Mute Chat</button><button class="btn" data-act="unmute" type="button">Unmute</button><button class="btn danger" data-act="deleteUser" type="button">Delete Account</button></div>${protectedUser(u)?'<p class="muted">Protected account: owner/tester cannot be banned, muted, timed out, or deleted.</p>':''}`;renderDMViewer();renderNotes()}async function usernameTaken(username,exceptUid){const clean=cleanUser(username);if(!clean)return true;return Object.values(users).some(u=>u.uid!==exceptUid&&String(u.username||'').toLowerCase()===clean)}async function saveUser(){const u=users[selected];if(!u)return;const username=cleanUser(editUsername.value);if(!username)return alert('Username required.');if(await usernameTaken(username,selected))return alert('That username is already taken.');const savedLevel=Number(editLevel.value||0);const patch={username,name:cleanName(editName.value)||username,bio:editBio.value.trim().slice(0,260),nameColor:editNameColor.value.trim().slice(0,32),level:savedLevel,activeSeconds:Math.max(Number(u.activeSeconds||0),savedLevel*120),customTag:editCustomTag.value.trim().slice(0,18)};if(canEditRanks()){if(protectedUser(u)&&!canOverrideProtected()&&!['owner','tester'].includes(editRank.value))return alert('Owner/tester accounts are protected.');patch.role=editRank.value;patch.rank=editRank.value}else if(editRank.value!==u.role)alert('Only owner can change ranks.');if(patch.role==='banned'&&protectedUser(u)&&!canOverrideProtected())return alert('Owner/tester accounts cannot be banned.');if(editPass.value.trim())patch.passwordHash=await FGAuth.sha256(editPass.value.trim());await db.ref('siteUsers/'+selected).update(patch);await db.ref('siteUsernames/'+username).set(selected);selectedDirty=false;selectedEditingUid=selected;alert('Saved.');renderSelected()}async function createNewAccount(){const username=cleanUser(newUsername.value),name=cleanName(newName.value)||username,pass=newPass.value,role=canEditRanks()?newRank.value:'member';if(!username||!pass){addStatus.textContent='Username and password required.';return}if(await usernameTaken(username,'')){addStatus.textContent='That username is already taken.';return}const uid='user-'+username;const user={uid,username,name,role,rank:role,passwordHash:await FGAuth.sha256(pass),bio:'',photoURL:'',recentGames:[],createdAt:Date.now(),createdBy:me.uid};await db.ref('siteUsers/'+uid).set(user);await db.ref('siteUsernames/'+username).set(uid);addStatus.textContent='Account created.';newUsername.value=newName.value=newPass.value='';setTimeout(()=>addModal.classList.remove('open'),600)}async function moderate(act){const u=users[selected];if(!u)return;if(protectedUser(u)&&!canOverrideProtected()&&['timeout','untimeout','mute','deleteUser','banUser','unbanUser'].includes(act))return alert('Owner/tester accounts are protected.');if(act==='removePfp')await db.ref('siteUsers/'+selected).update({photoURL:''});if(act==='banUser'){
+const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));let db,me,users={},presence={},selected=null,selectedDirty=false,selectedEditingUid=null,siteReports={},siteLogs={},siteFilters={},banAppeals={},gameRequests={},deletedArchive={},scheduledAnnouncements={};window.banAppeals=banAppeals;window.gameRequests=gameRequests;Object.defineProperties(window,{db:{get:()=>db},me:{get:()=>me},users:{get:()=>users},presence:{get:()=>presence}});const power=r=>({banned:-1,member:0,bot:0,helper:1,mod:2,admin:3,tester:4,owner:5}[r]??0);function isCruzUser(u=me){return String(u?.username||'').toLowerCase()==='cruz'}const rankEmoji=r=>({owner:'👑',tester:'🧪',admin:'🛡️',mod:'🔨',helper:'✨',bot:'🤖',banned:'🚫',member:''}[r]||'');function photo(u){return (window.FGAuth?.pickPhoto?.(u))||u?.photoURL||u?.pfp||u?.pfpUrl||u?.profilePic||u?.profilePicture||u?.profileImage||u?.avatar||u?.avatarUrl||u?.picture||u?.photo||u?.image||u?.icon||''}function av(u){const img=photo(u);return img?`<span class="avatar"><img src="${esc(img)}" alt=""></span>`:`<span class="avatar">${esc((u?.name||u?.username||'U').slice(0,1).toUpperCase())}</span>`}function canEditRanks(){return isCruzUser()||power(me?.role)>=5}function canGame(){return isCruzUser()||['owner','tester'].includes(me?.role)}function protectedUser(u){return ['owner','tester'].includes(u?.role)}function canOverrideProtected(){return isCruzUser()}function cleanUser(s){return String(s||'').toLowerCase().trim().replace(/[^a-z0-9_.-]/g,'').slice(0,24)}function cleanName(s){return String(s||'').replace(/\s+/g,' ').trim().slice(0,24)}function renderUsers(){const q=(userSearch.value||'').toLowerCase();const arr=Object.values(users).filter(u=>u&&u.uid).filter(u=>[u.username,u.name,u.role,u.bio].join(' ').toLowerCase().includes(q)).sort((a,b)=>power(b.role)-power(a.role)||String(a.username).localeCompare(String(b.username)));usersList.innerHTML=arr.map(u=>{const p=presence[u.uid]||{},on=p.online&&Date.now()-Number(p.lastSeen||0)<90000;return `<button class="person ${selected===u.uid?'convo-active':''}" data-select="${esc(u.uid)}" type="button" style="width:100%;text-align:left;color:white">${av(u)}<span><b>${esc(u.name||u.username)} ${rankEmoji(u.role)} <span class="rank">${esc(u.role||'member')}</span></b><span>@${esc(u.username||'')} · ${on?'online · '+esc(p.currentPage||'active'):'offline'}</span></span><span class="status-dot" style="opacity:${on?1:.25}"></span></button>`}).join('')||'<div class="empty">No users found.</div>';if(selected && !selectedDirty)renderSelected()}function renderSelected(){selectedEditingUid=selected;const u=users[selected];if(!u){selectedUser.innerHTML='<p class="muted">Pick a user to edit.</p>';return}const rankOptions=['member','bot','helper','mod','admin','tester','owner','banned'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('');selectedUser.innerHTML=`<div class="profile-hero" style="margin-bottom:14px">${av(u)}<div><h2 style="margin:0">${esc(u.name||u.username)} ${rankEmoji(u.role)}</h2><p class="muted">@${esc(u.username)} · ${esc(u.uid)}</p><span class="rank">${esc(u.role||'member')}</span></div></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px"><div class="field"><label>Username</label><input id="editUsername" value="${esc(u.username||'')}"></div><div class="field"><label>Display Name</label><input id="editName" value="${esc(u.name||'')}"></div><div class="field"><label>New Password</label><input id="editPass" type="password" placeholder="leave blank"></div><div class="field"><label>Rank</label><select id="editRank" class="search">${rankOptions}</select></div><div class="field"><label>Name Color</label><input id="editNameColor" value="${esc(u.nameColor||'')}" placeholder="#38bdf8 or red"></div><div class="field"><label>Level</label><input id="editLevel" type="number" min="0" value="${Number(u.level||0)}"></div><div class="field"><label>Custom Tag</label><input id="editCustomTag" maxlength="18" value="${esc(u.customTag||'')}" placeholder="LEGEND / VIP / STAFF"></div></div><div class="field"><label>Bio</label><textarea id="editBio">${esc(u.bio||'')}</textarea></div><div class="field"><label>Add Moderator Note</label><textarea id="newUserNote" placeholder="Private staff note about this user..."></textarea></div><div class="admin-actions"><button class="btn" data-act="saveNote" type="button">Add Note</button><button class="btn primary" data-act="saveUser" type="button">Save Changes</button><button class="btn" data-act="removePfp" type="button">Remove PFP</button><button class="btn" data-act="warn" type="button">Warn</button><button class="btn danger" data-act="banUser" type="button">Ban</button><button class="btn" data-act="unbanUser" type="button">Unban</button><button class="btn" data-act="timeout" type="button">Time-out</button><button class="btn" data-act="untimeout" type="button">Un-timeout</button><button class="btn" data-act="forceLogout" type="button">Log Out User</button><button class="btn" data-act="mute" type="button">Mute Chat</button><button class="btn" data-act="unmute" type="button">Unmute</button><button class="btn danger" data-act="deleteUser" type="button">Delete Account</button></div>${protectedUser(u)?'<p class="muted">Protected account: owner/tester cannot be banned, muted, timed out, or deleted.</p>':''}`;renderDMViewer();renderNotes()}async function usernameTaken(username,exceptUid){const clean=cleanUser(username);if(!clean)return true;return Object.values(users).some(u=>u.uid!==exceptUid&&String(u.username||'').toLowerCase()===clean)}async function saveUser(){const u=users[selected];if(!u)return;const username=cleanUser(editUsername.value);if(!username)return alert('Username required.');if(await usernameTaken(username,selected))return alert('That username is already taken.');const savedLevel=Number(editLevel.value||0);const patch={username,name:cleanName(editName.value)||username,bio:editBio.value.trim().slice(0,260),nameColor:editNameColor.value.trim().slice(0,32),level:savedLevel,activeSeconds:Math.max(Number(u.activeSeconds||0),savedLevel*120),customTag:editCustomTag.value.trim().slice(0,18)};if(canEditRanks()){if(protectedUser(u)&&!canOverrideProtected()&&!['owner','tester'].includes(editRank.value))return alert('Owner/tester accounts are protected.');patch.role=editRank.value;patch.rank=editRank.value}else if(editRank.value!==u.role)alert('Only owner can change ranks.');if(patch.role==='banned'&&protectedUser(u)&&!canOverrideProtected())return alert('Owner/tester accounts cannot be banned.');if(editPass.value.trim())patch.passwordHash=await FGAuth.sha256(editPass.value.trim());await db.ref('siteUsers/'+selected).update(patch);await db.ref('siteUsernames/'+username).set(selected);selectedDirty=false;selectedEditingUid=selected;alert('Saved.');renderSelected()}async function createNewAccount(){const username=cleanUser(newUsername.value),name=cleanName(newName.value)||username,pass=newPass.value,role=canEditRanks()?newRank.value:'member';if(!username||!pass){addStatus.textContent='Username and password required.';return}if(await usernameTaken(username,'')){addStatus.textContent='That username is already taken.';return}const uid='user-'+username;const user={uid,username,name,role,rank:role,passwordHash:await FGAuth.sha256(pass),bio:'',photoURL:'',recentGames:[],createdAt:Date.now(),createdBy:me.uid};await db.ref('siteUsers/'+uid).set(user);await db.ref('siteUsernames/'+username).set(uid);addStatus.textContent='Account created.';newUsername.value=newName.value=newPass.value='';setTimeout(()=>addModal.classList.remove('open'),600)}
+const WARN_PRESETS=[
+  ['use real name','Please use your real name as your display name. Fake names can get you banned.'],
+  ['stop spamming','Please stop spamming the chat. If it continues, you may be timed out or banned.'],
+  ['no cussing','Please do not use cuss words on this site. Keep chat school-appropriate.'],
+  ['don’t be mean','Please do not be rude or mean to other users.'],
+  ['no harassment','Do not harass, target, or bully other users.'],
+  ['inappropriate pfp','Your profile picture is not appropriate. Change it or it may be removed by staff.'],
+  ['inappropriate bio','Your bio/status is not appropriate. Change it or staff may remove it.'],
+  ['false reporting','Do not make false reports. False reports can lead to moderation action.'],
+  ['respect staff','Please respect staff decisions and follow directions.'],
+  ['no bypassing filters','Do not try to bypass chat filters or moderation.'],
+  ['stop arguing','Please stop arguing in chat and move on.'],
+  ['keep it safe','Keep the website safe and school-appropriate.'],
+  ['custom','CUSTOM']
+];
+const BAN_PRESETS=[
+  ['didn’t use real name','Banned for refusing to use a real display name after being warned.'],
+  ['spamming after warned','Banned for continuing to spam after being warned.'],
+  ['cussing after warned','Banned for continuing to use cuss words after being warned.'],
+  ['harassment','Banned for harassment or bullying.'],
+  ['inappropriate profile','Banned for inappropriate profile content.'],
+  ['false reports','Banned for repeated false reports.'],
+  ['bypassing moderation','Banned for bypassing filters or staff moderation.'],
+  ['impersonation','Banned for impersonating another user or staff member.'],
+  ['alt account evasion','Banned for using an alt account to evade moderation.'],
+  ['unsafe behavior','Banned for unsafe or inappropriate behavior.'],
+  ['custom','CUSTOM']
+];
+const REPORT_RESOLVE_PRESETS=[
+  ['false report','False Report','Please do not false report people. Doing so can lead to moderation action.','False report. No action taken against the reported user.'],
+  ['solved no ban','Report Solved','Staff reviewed your report and handled it. The reported user was not banned.','Resolved without ban.'],
+  ['solved with ban','Report Solved','Staff reviewed your report and handled it. The reported user was banned.','Resolved with ban.'],
+  ['user warned','Report Solved','Staff reviewed your report and warned the reported user.','Reported user warned.'],
+  ['user timed out','Report Solved','Staff reviewed your report and timed out the reported user.','Reported user timed out.'],
+  ['message deleted','Report Solved','Staff reviewed your report and deleted the message.','Reported message deleted.'],
+  ['not enough evidence','Report Reviewed','Staff reviewed your report, but there was not enough evidence to take action.','Not enough evidence.'],
+  ['already handled','Report Already Handled','This issue had already been handled by staff.','Duplicate/already handled.'],
+  ['game fixed','Report Solved','Staff reviewed your report and fixed or updated the game.','Game request/report fixed.'],
+  ['custom','CUSTOM','CUSTOM','CUSTOM']
+];
+function choosePreset(title,presets,customDefault=''){
+  const menu=presets.map((p,i)=>`${i+1}. ${p[0]}`).join('\n');
+  const raw=prompt(title+'\n\n'+menu+'\n\nType a number, or type your own custom reason.', '1');
+  if(raw===null)return null;
+  const n=Number(String(raw).trim());
+  if(n>=1&&n<=presets.length){
+    const p=presets[n-1];
+    if(p[1]==='CUSTOM'||p[0]==='custom')return prompt('Custom text?',customDefault);
+    return p;
+  }
+  return String(raw).trim();
+}
+function presetText(result,fallback=''){
+  if(result===null)return null;
+  if(Array.isArray(result))return result[1]||fallback;
+  return String(result||fallback).trim();
+}
+
+async function moderate(act){const u=users[selected];if(!u)return;if(protectedUser(u)&&!canOverrideProtected()&&['timeout','untimeout','mute','deleteUser','banUser','unbanUser'].includes(act))return alert('Owner/tester accounts are protected.');if(act==='removePfp')await db.ref('siteUsers/'+selected).update({photoURL:''});if(act==='banUser'){
+  const picked=choosePreset('Choose ban preset',BAN_PRESETS,'Banned from admin panel');
+  const reason=presetText(picked,'Banned from admin panel');
+  if(reason===null)return;
   const title=prompt('Ban page title','Account Banned');
   if(title===null)return;
   const description=prompt('Ban page description','You may not use GameHub right now.');
   if(description===null)return;
-  const reason=prompt('Ban reason','Banned from admin panel');
-  if(reason===null)return;
   await db.ref('siteUsers/'+selected).update({role:'banned',rank:'banned',banTitle:title,banDescription:description,banReason:reason,bannedAt:Date.now()});
   await db.ref('siteLogs/staff').push({action:'banUser',target:selected,details:reason,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
 }if(act==='unbanUser')await db.ref('siteUsers/'+selected).update({role:'member',rank:'member',banReason:null,banUntil:null,bannedAt:null});if(act==='untimeout')await db.ref('siteUsers/'+selected).update({timeoutUntil:null});if(act==='warn'){
-  const reason=prompt('Warn reason?','Please follow the rules.');
-  if(reason===null)return;
-  const text=(reason||'Please follow the rules.').trim();
+  const picked=choosePreset('Choose warning preset',WARN_PRESETS,'Please follow the rules.');
+  const text=presetText(picked,'Please follow the rules.');
+  if(text===null)return;
   await db.ref('siteNotifications/'+selected).push({text:'Admin warning: '+text,createdAt:Date.now(),seen:false,type:'warning'});
   await db.ref('siteWarnings/'+selected).push({reason:text,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
   await db.ref('siteLogs/staff').push({action:'warnUser',target:selected,details:text,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
@@ -217,7 +347,140 @@ if(act==='forceLogout'){
   const u=users[selected]||{};
   dmViewer.innerHTML=`<div class="person" style="width:100%;color:white"><span class="avatar">💬</span><span><b>${esc(u.name||u.username||selected)}</b><span>Open the full read-only DM viewer for this user.</span><span class="button-row" style="margin-top:8px"><a class="btn primary" href="conversationviewer.html?uid=${encodeURIComponent(selected)}">View DMs</a></span></span></div>`;
 }
-function renderNotes(){if(!selected||!window.notesViewer){if(window.notesViewer)notesViewer.innerHTML='<p class="muted">Select a user to see notes.</p>';return}db.ref('siteUserNotes/'+selected).once('value').then(s=>{const notes=s.val()||{};const arr=Object.entries(notes).sort((a,b)=>Number(b[1].createdAt||0)-Number(a[1].createdAt||0));notesViewer.innerHTML=arr.map(([id,n])=>`<div class="person"><span class="avatar">📝</span><span><b>${esc(n.byName||n.by||'staff')}</b><span>${esc(n.text||'')}</span><span class="muted">${n.createdAt?new Date(n.createdAt).toLocaleString():''}</span></span></div>`).join('')||'<p class="muted">No notes for this user.</p>'})}document.addEventListener('fg-auth-ready',async()=>{me=window.FGUser;if(!isCruzUser(me)&&power(me.role)<3){document.body.innerHTML='<main style="padding:30px"><h1>Access denied</h1><p>You need admin rank or higher.</p></main>';return}adminRank.textContent=me.role;await FGAuth.initFirebase();db=FGAuth.db();gameEditor.style.display=canGame()?'block':'none';gamePermText.textContent=canGame()?'You can add/edit games.':'Admins can moderate accounts, but only owner/tester can add games.';db.ref('siteUsers').on('value',s=>{users=s.val()||{};renderUsers()});db.ref('sitePresence').on('value',s=>{presence=s.val()||{};renderUsers()});db.ref('siteCustomCommands').on('value',s=>{customCommands=s.val()||{};renderCustomCommands()});db.ref('homepageAdmin/games').on('value',s=>{gamesAdmin=s.val()||{};renderGamesAdmin()})});userSearch.addEventListener('input',renderUsers);usersList.addEventListener('click',e=>{const b=e.target.closest('[data-select]');if(b){selected=b.dataset.select;selectedDirty=false;selectedEditingUid=selected;adminActiveDM=null;renderUsers();renderSelected()}});selectedUser.addEventListener('input',e=>{if(e.target&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){selectedDirty=true;selectedEditingUid=selected;}});selectedUser.addEventListener('change',e=>{if(e.target&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){selectedDirty=true;selectedEditingUid=selected;}});selectedUser.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b)return;if(b.dataset.act==='saveUser')saveUser();else if(b.dataset.act==='saveNote'){const text=(newUserNote?.value||'').trim();if(!selected||!text)return;await db.ref('siteUserNotes/'+selected).push({text:text.slice(0,500),by:me.uid,byName:me.username||me.name,createdAt:Date.now()});newUserNote.value='';renderNotes();}else moderate(b.dataset.act)});openAddAccount.onclick=()=>addModal.classList.add('open');closeAdd.onclick=()=>addModal.classList.remove('open');createAccount.onclick=createNewAccount;if(window.saveCustomCommand)saveCustomCommand.onclick=saveCommand;if(window.deleteCustomCommand)deleteCustomCommand.onclick=deleteCommand;if(window.customCommandsList)customCommandsList.addEventListener('click',e=>{const b=e.target.closest('[data-cmd]');if(b)fillCustomCommand(b.dataset.cmd)});
+function renderNotes(){if(!selected||!window.notesViewer){if(window.notesViewer)notesViewer.innerHTML='<p class="muted">Select a user to see notes.</p>';return}db.ref('siteUserNotes/'+selected).once('value').then(s=>{const notes=s.val()||{};const arr=Object.entries(notes).sort((a,b)=>Number(b[1].createdAt||0)-Number(a[1].createdAt||0));notesViewer.innerHTML=arr.map(([id,n])=>`<div class="person"><span class="avatar">📝</span><span><b>${esc(n.byName||n.by||'staff')}</b><span>${esc(n.text||'')}</span><span class="muted">${n.createdAt?new Date(n.createdAt).toLocaleString():''}</span></span></div>`).join('')||'<p class="muted">No notes for this user.</p>'})}
+function similarity(a,b){
+  a=String(a||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  b=String(b||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(!a||!b)return 0;
+  if(a===b)return 1;
+  const shorter=Math.min(a.length,b.length), longer=Math.max(a.length,b.length);
+  let same=0; for(let i=0;i<shorter;i++) if(a[i]===b[i]) same++;
+  return same/longer;
+}
+function actionPresets(){
+  return [
+    ['spam warning','Warn user for spam','warn'],
+    ['harassment warning','Warn user for harassment','warn'],
+    ['fake name warning','Warn user to use real display name','warn'],
+    ['bad pfp warning','Warn user for inappropriate profile picture','warn'],
+    ['24h timeout','Timeout user for 24 hours','timeout24'],
+    ['7d ban','Ban user for 7 days / staff review','ban7']
+  ];
+}
+function renderPresets(){
+  if(!window.presetList)return;
+  presetList.innerHTML=actionPresets().map(([name,desc,act])=>`<button class="person" data-preset="${esc(act)}" type="button" style="width:100%;text-align:left;color:white"><span class="avatar">⚡</span><span><b>${esc(name)}</b><span>${esc(desc)}</span></span></button>`).join('');
+}
+async function runPreset(act){
+  if(!selected)return alert('Select a user first in Users tab.');
+  if(act==='warn'){const reason=prompt('Preset warning reason','Please follow the site rules.');if(reason)await db.ref('siteNotifications/'+selected).push({text:'Admin warning: '+reason,type:'warning',createdAt:Date.now(),seen:false});}
+  if(act==='timeout24'){await db.ref('siteUsers/'+selected).update({timeoutUntil:Date.now()+86400000,timeoutReason:'24h preset timeout'});}
+  if(act==='ban7'){await db.ref('siteUsers/'+selected).update({role:'banned',rank:'banned',banReason:'7 day preset ban / staff review',bannedAt:Date.now(),banUntil:Date.now()+7*86400000});}
+  await db.ref('siteLogs/staff').push({action:'preset:'+act,target:selected,by:me.uid,byName:me.username||me.name,createdAt:Date.now()});
+}
+function renderModQueue(){
+  if(!window.modQueueList)return;
+  const reports=Object.entries(siteReports||{}).map(([id,r])=>({id,...r})).filter(r=>(r.status||'open')==='open');
+  const warnings=Object.values(users||{}).filter(u=>Number(u.warnings||0)>0||u.timeoutUntil||u.mutedUntil);
+  const appeals=Object.entries(banAppeals||{}).map(([id,a])=>({id,...a})).filter(a=>(a.status||'open')==='open');
+  const items=[
+    ...reports.map(r=>['🚩','Report',`${r.reason||r.type||'report'} · ${r.targetName||r.targetUsername||r.targetUid||''}`,r.createdAt]),
+    ...appeals.map(a=>['⚖️','Appeal',`${a.name||a.username||a.uid}: ${a.reason||''}`,a.createdAt]),
+    ...warnings.map(u=>['⚠️','User Flag',`${u.name||u.username} · ${u.role||'member'}`,u.lastSeen])
+  ].sort((a,b)=>Number(b[3]||0)-Number(a[3]||0)).slice(0,30);
+  modQueueList.innerHTML=items.map(i=>`<div class="person"><span class="avatar">${i[0]}</span><span><b>${esc(i[1])}</b><span>${esc(i[2])}</span></span></div>`).join('')||'<p class="muted">Queue is empty.</p>';
+  renderPresets();
+}
+function renderAppeals(){
+  if(!window.banAppealsList)return;
+  const arr=Object.entries(banAppeals||{}).map(([id,a])=>({id,...a})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
+  banAppealsList.innerHTML=arr.map(a=>`<div class="report-card"><div><b>${esc(a.name||a.username||a.uid||'user')} · ${esc(a.status||'open')}</b><p class="muted">${esc(a.reason||'No appeal text')}<br>${new Date(a.createdAt||Date.now()).toLocaleString()} · device ${esc(a.deviceId||'unknown')}</p></div><div class="button-row"><button class="btn primary" data-appeal-approve="${esc(a.id)}">Approve / Unban</button><button class="btn" data-appeal-deny="${esc(a.id)}">Deny</button><button class="btn" data-appeal-reply="${esc(a.id)}">Reply</button></div></div>`).join('')||'<p class="muted">No appeals.</p>';
+}
+function renderFilters(){
+  if(!window.filtersList)return;
+  const arr=Object.entries(siteFilters||{}).sort((a,b)=>a[0].localeCompare(b[0]));
+  filtersList.innerHTML=arr.map(([word,f])=>`<button class="person" data-filter="${esc(word)}" type="button" style="width:100%;text-align:left;color:white"><span class="avatar">🚫</span><span><b>${esc(word)}</b><span>${esc(f.action||'delete')}</span></span></button>`).join('')||'<p class="muted">No filters yet.</p>';
+}
+async function saveWordFilter(){
+  const word=String(filterWord.value||'').trim().toLowerCase();
+  if(!word)return;
+  await db.ref('siteWordFilters/'+word.replace(/[.#$/[\]]/g,'_')).set({word,action:filterAction.value,updatedAt:Date.now(),updatedBy:me.uid});
+  filterStatus.textContent='saved';
+}
+async function deleteWordFilter(){
+  const word=String(filterWord.value||'').trim().toLowerCase().replace(/[.#$/[\]]/g,'_');
+  if(!word)return;
+  await db.ref('siteWordFilters/'+word).remove();
+  filterStatus.textContent='deleted';
+}
+function renderAlts(){
+  if(!window.altsList)return;
+  const arr=Object.values(users||{}).filter(u=>u&&u.uid);
+  const banned=arr.filter(u=>(u.role||u.rank)==='banned'||u.bannedAt||u.banReason);
+  const flags=[];
+  banned.forEach(b=>{
+    arr.forEach(u=>{
+      if(!u.uid||u.uid===b.uid)return;
+      const sameDevice=b.deviceId&&u.deviceId&&b.deviceId===u.deviceId;
+      const dt=Math.abs(Number(u.createdAt||0)-Number(b.bannedAt||b.createdAt||0));
+      const timed=dt>=60000 && dt<=30*60000;
+      const nameSim=Math.max(similarity(u.name,b.name),similarity(u.name,b.username),similarity(u.username,b.name));
+      if(sameDevice&&timed) flags.push({u,b,score:nameSim,reason:'same device + created 1-30 min from ban'});
+      else if(nameSim>.78&&(u.createdAt||0)>(b.bannedAt||b.createdAt||0)) flags.push({u,b,score:nameSim,reason:'similar display name/username'});
+    });
+  });
+  altsList.innerHTML=flags.slice(0,40).map(f=>`<div class="report-card"><div><b>${esc(f.u.name||f.u.username)} may be alt of ${esc(f.b.name||f.b.username)}</b><p class="muted">${esc(f.reason)} · name match ${Math.round(f.score*100)}%<br>${esc(f.u.uid)} / ${esc(f.b.uid)}<br>Device: ${esc(f.u.deviceId||'unknown')}</p></div><div class="button-row"><a class="btn" href="viewprofile.html?id=${encodeURIComponent(f.u.uid)}">View New</a><a class="btn" href="viewprofile.html?id=${encodeURIComponent(f.b.uid)}">View Banned</a></div></div>`).join('')||'<p class="muted">No likely alts found.</p>';
+}
+async function runMessageSearchNow(){
+  const term=String(messageSearchTerm.value||'').toLowerCase().trim();
+  const mode=messageSearchMode.value;
+  let rows=[];
+  if(mode==='deleted') rows=Object.entries(deletedArchive||{}).map(([id,m])=>({id,...m,deleted:true}));
+  else if(mode==='reported') rows=Object.entries(siteReports||{}).map(([id,r])=>({id,text:r.messageText||r.description||r.details||'',username:r.targetUsername||'',name:r.targetName||'',createdAt:r.createdAt,reported:true}));
+  else {const s=await db.ref('fun-and-games-chat/messages').limitToLast(500).get();s.forEach(c=>rows.push({id:c.key,...(c.val()||{})}));}
+  rows=rows.filter(m=>!term||[m.text,m.username,m.name,m.uid,m.reason,m.details].join(' ').toLowerCase().includes(term)).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)).slice(0,80);
+  messageSearchResults.innerHTML=rows.map(m=>`<div class="person"><span class="avatar">${m.deleted?'🗑️':m.reported?'🚩':'💬'}</span><span><b>${esc(m.name||m.username||m.uid||'unknown')}</b><span>${esc(m.text||m.details||'')} · ${m.createdAt?new Date(m.createdAt).toLocaleString():''}</span></span></div>`).join('')||'<p class="muted">No results.</p>';
+}
+function renderDeletedArchive(){
+  if(!window.deletedArchiveList)return;
+  const arr=Object.entries(deletedArchive||{}).map(([id,m])=>({id,...m})).sort((a,b)=>Number(b.deletedAt||b.createdAt||0)-Number(a.deletedAt||a.createdAt||0)).slice(0,100);
+  deletedArchiveList.innerHTML=arr.map(m=>`<div class="person"><span class="avatar">🗑️</span><span><b>${esc(m.name||m.username||m.uid||'unknown')}</b><span>${esc(m.text||'')}<br>Deleted by ${esc(m.deletedByName||m.deletedBy||'staff')} · ${new Date(m.deletedAt||m.createdAt||Date.now()).toLocaleString()}</span></span></div>`).join('')||'<p class="muted">No deleted messages archived yet.</p>';
+}
+function renderStaffStats(){
+  if(!window.staffStatsList)return;
+  const stats={};
+  Object.values(siteLogs||{}).forEach(l=>{const k=l.byName||l.by||'staff';stats[k]=stats[k]||{total:0,warn:0,ban:0,delete:0,reports:0,last:0};stats[k].total++;stats[k].last=Math.max(stats[k].last,Number(l.createdAt||0));const a=String(l.action||'');if(a.includes('warn'))stats[k].warn++;if(a.includes('ban'))stats[k].ban++;if(a.includes('delete'))stats[k].delete++;if(a.includes('resolveReport'))stats[k].reports++;});
+  const arr=Object.entries(stats).sort((a,b)=>b[1].total-a[1].total);
+  staffStatsList.innerHTML=arr.map(([name,s])=>`<div class="person"><span class="avatar">👮</span><span><b>${esc(name)}</b><span>${s.total} actions · ${s.warn} warnings · ${s.ban} bans · ${s.delete} deletes · ${s.reports} reports · last ${s.last?new Date(s.last).toLocaleString():'never'}</span></span></div>`).join('')||'<p class="muted">No staff actions yet.</p>';
+}
+function renderGameRequests(){
+  if(!window.gameRequestsList)return;
+  const arr=Object.entries(gameRequests||{}).map(([id,r])=>({id,...r})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
+  gameRequestsList.innerHTML=arr.map(r=>`<div class="report-card"><div><b>${esc(r.title||r.name||'Game request')}</b><p class="muted">${esc(r.url||'')}<br>${esc(r.reason||r.description||'')}<br>${esc(r.byName||r.by||'unknown')} · ${esc(r.status||'open')}</p></div><div class="button-row"><button class="btn primary" data-game-request-approve="${esc(r.id)}">Approve</button><button class="btn" data-game-request-deny="${esc(r.id)}">Deny</button><button class="btn danger" data-game-request-delete="${esc(r.id)}">Delete</button></div></div>`).join('')||'<p class="muted">No game requests.</p>';
+}
+async function saveScheduledAnnouncement(){
+  const text=String(scheduleText.value||'').trim(); if(!text)return;
+  await db.ref('siteScheduledAnnouncements').push({text,showAt:new Date(scheduleAt.value).getTime()||Date.now(),expireMinutes:Number(scheduleExpire.value||60),repeat:scheduleRepeat.value,status:'scheduled',createdAt:Date.now(),createdBy:me.uid});
+  scheduleText.value='';
+}
+function renderScheduled(){
+  if(!window.scheduledList)return;
+  const arr=Object.entries(scheduledAnnouncements||{}).map(([id,a])=>({id,...a})).sort((a,b)=>Number(a.showAt||0)-Number(b.showAt||0));
+  scheduledList.innerHTML=arr.map(a=>`<div class="person"><span class="avatar">⏰</span><span><b>${esc(a.text||'announcement')}</b><span>${new Date(a.showAt||Date.now()).toLocaleString()} · expires ${Number(a.expireMinutes||60)}m · ${esc(a.repeat||'once')}</span></span></div>`).join('')||'<p class="muted">No scheduled announcements.</p>';
+}
+async function renderHealth(){
+  if(!window.healthList||!window.liveMonitor)return;
+  const paths=['siteUsers','siteReports','fun-and-games-chat/messages','homepageAdmin/games','siteNovaLogs','siteLogs/staff','siteBanAppeals','siteWordFilters'];
+  const results=[];
+  for(const p of paths){try{const s=await db.ref(p).limitToFirst?await db.ref(p).limitToFirst(1).get():await db.ref(p).get();results.push([p,s.exists()?'✅':'⚠️']);}catch(e){results.push([p,'❌']);}}
+  healthList.innerHTML=results.map(r=>`<div class="person"><span class="avatar">${r[1]}</span><span><b>${esc(r[0])}</b><span>${r[1]==='✅'?'exists':'missing or blocked'}</span></span></div>`).join('');
+  const online=Object.values(presence||{}).filter(p=>p.online&&Date.now()-Number(p.lastSeen||0)<90000).length;
+  const openReports=Object.values(siteReports||{}).filter(r=>(r.status||'open')==='open').length;
+  liveMonitor.innerHTML=`<div class="metric-card"><span>Online</span><b>${online}</b></div><div class="metric-card"><span>Open Reports</span><b>${openReports}</b></div><div class="metric-card"><span>Users</span><b>${Object.keys(users||{}).length}</b></div>`;
+}
+function renderAllFeaturePanels(){renderModQueue();renderAppeals();renderFilters();renderAlts();renderDeletedArchive();renderStaffStats();renderGameRequests();renderScheduled();renderHealth();}
+
+document.addEventListener('fg-auth-ready',async()=>{me=window.FGUser;if(!isCruzUser(me)&&power(me.role)<3){document.body.innerHTML='<main style="padding:30px"><h1>Access denied</h1><p>You need admin rank or higher.</p></main>';return}adminRank.textContent=me.role;await FGAuth.initFirebase();db=FGAuth.db();gameEditor.style.display=canGame()?'block':'none';gamePermText.textContent=canGame()?'You can add/edit games.':'Admins can moderate accounts, but only owner/tester can add games.';db.ref('siteUsers').on('value',s=>{users=s.val()||{};renderUsers()});db.ref('sitePresence').on('value',s=>{presence=s.val()||{};renderUsers()});db.ref('siteCustomCommands').on('value',s=>{customCommands=s.val()||{};renderCustomCommands()});db.ref('homepageAdmin/games').on('value',s=>{gamesAdmin=s.val()||{};renderGamesAdmin()});db.ref('siteReports').on('value',s=>{siteReports=s.val()||{};renderAllFeaturePanels()});db.ref('siteLogs/staff').limitToLast(300).on('value',s=>{siteLogs={};s.forEach(c=>siteLogs[c.key]=c.val()||{});renderAllFeaturePanels()});db.ref('siteWordFilters').on('value',s=>{siteFilters=s.val()||{};renderAllFeaturePanels()});db.ref('siteBanAppeals').on('value',s=>{banAppeals=s.val()||{};window.banAppeals=banAppeals;renderAllFeaturePanels()});db.ref('siteGameRequests').on('value',s=>{gameRequests=s.val()||{};window.gameRequests=gameRequests;renderAllFeaturePanels()});db.ref('siteDeletedMessages').limitToLast(200).on('value',s=>{deletedArchive={};s.forEach(c=>deletedArchive[c.key]=c.val()||{});renderAllFeaturePanels()});db.ref('siteScheduledAnnouncements').on('value',s=>{scheduledAnnouncements=s.val()||{};renderAllFeaturePanels()})});userSearch.addEventListener('input',renderUsers);usersList.addEventListener('click',e=>{const b=e.target.closest('[data-select]');if(b){selected=b.dataset.select;selectedDirty=false;selectedEditingUid=selected;adminActiveDM=null;renderUsers();renderSelected()}});selectedUser.addEventListener('input',e=>{if(e.target&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){selectedDirty=true;selectedEditingUid=selected;}});selectedUser.addEventListener('change',e=>{if(e.target&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){selectedDirty=true;selectedEditingUid=selected;}});selectedUser.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b)return;if(b.dataset.act==='saveUser')saveUser();else if(b.dataset.act==='saveNote'){const text=(newUserNote?.value||'').trim();if(!selected||!text)return;await db.ref('siteUserNotes/'+selected).push({text:text.slice(0,500),by:me.uid,byName:me.username||me.name,createdAt:Date.now()});newUserNote.value='';renderNotes();}else moderate(b.dataset.act)});openAddAccount.onclick=()=>addModal.classList.add('open');closeAdd.onclick=()=>addModal.classList.remove('open');createAccount.onclick=createNewAccount;if(window.saveCustomCommand)saveCustomCommand.onclick=saveCommand;if(window.deleteCustomCommand)deleteCustomCommand.onclick=deleteCommand;if(window.customCommandsList)customCommandsList.addEventListener('click',e=>{const b=e.target.closest('[data-cmd]');if(b)fillCustomCommand(b.dataset.cmd)});
 let customCommands={};
 function cleanCmdName(s){return String(s||'').toLowerCase().trim().replace(/^\//,'').replace(/[^a-z0-9_-]/g,'').slice(0,24)}
 function renderCustomCommands(){
@@ -383,7 +646,7 @@ if(window.gamesAdminList)gamesAdminList.addEventListener('click',e=>{const b=e.t
       if(gp)gp.innerHTML=`<div class="metric-card"><span>Games</span><b>${arr.length}</b></div><div class="metric-card"><span>Locked</span><b>${locked}</b></div><div class="metric-card"><span>Hidden</span><b>${hidden}</b></div>`;
     });
 
-    db.ref('homepageAdmin/stats').on('value',s=>{
+    db.ref('homepageAdmin/gameStats').on('value',s=>{
       const stats=s.val()||{};
       const top=Object.entries(stats).sort((a,b)=>Number(b[1]?.plays||0)-Number(a[1]?.plays||0)).slice(0,8);
       const el=$('topGamesAnalytics');
@@ -461,12 +724,17 @@ if(window.gamesAdminList)gamesAdminList.addEventListener('click',e=>{const b=e.t
     if(resolve&&window.db){
       const reportId=resolve.dataset.reportResolve;
       const r=(window.__adminReports||{})[reportId]||{};
-      const title=prompt('Resolved notification title','Report Resolved');
-      if(title===null)return;
-      const description=prompt('Resolved notification description','Thanks for reporting. Staff reviewed it and resolved the report.');
-      if(description===null)return;
-      const resolutionNote=prompt('Internal resolution note','Handled by staff.');
-      if(resolutionNote===null)return;
+      const picked=choosePreset('Choose report resolution preset',REPORT_RESOLVE_PRESETS,'Handled by staff.');
+      if(picked===null)return;
+      let title,description,resolutionNote;
+      if(Array.isArray(picked)){
+        title=picked[1]; description=picked[2]; resolutionNote=picked[3];
+        if(title==='CUSTOM'){title=prompt('Resolved notification title','Report Resolved');if(title===null)return;description=prompt('Resolved notification description','Thanks for reporting. Staff reviewed it and resolved the report.');if(description===null)return;resolutionNote=prompt('Internal resolution note','Handled by staff.');if(resolutionNote===null)return;}
+      }else{
+        title=prompt('Resolved notification title','Report Resolved');if(title===null)return;
+        description=prompt('Resolved notification description','Thanks for reporting. Staff reviewed it and resolved the report.');if(description===null)return;
+        resolutionNote=String(picked||'Handled by staff.').trim();
+      }
       await db.ref('siteReports/'+reportId).update({status:'resolved',resolvedBy:window.me?.uid||'',resolvedByName:window.me?.username||window.me?.name||'',resolvedAt:Date.now(),resolutionTitle:title,resolutionDescription:description,resolutionNote});
       const notifyUid=r.reporterUid||r.by||'';
       if(notifyUid){
@@ -489,12 +757,81 @@ if(window.gamesAdminList)gamesAdminList.addEventListener('click',e=>{const b=e.t
     if($('newReportDetails'))$('newReportDetails').value='';
   };
 })();
+
+/* Fixed admin feature button handlers */
+document.addEventListener('click',async e=>{
+  const ap=e.target.closest('[data-appeal-approve]');
+  if(ap&&window.db){
+    const id=ap.getAttribute('data-appeal-approve');
+    const a=(window.banAppeals||banAppeals||{})[id]||{};
+    const uid=a.uid||'';
+    if(!confirm('Approve this appeal and unban this user?'))return;
+    await db.ref('siteBanAppeals/'+id).update({status:'approved',resolvedBy:me.uid,resolvedByName:me.username||me.name||'staff',resolvedAt:Date.now()});
+    if(uid){
+      await db.ref('siteUsers/'+uid).update({role:'member',rank:'member',banReason:null,bannedAt:null,banUntil:null,bannedUntil:null});
+      await db.ref('siteNotifications/'+uid).push({text:'Your ban appeal was approved. You have been unbanned.',type:'info',createdAt:Date.now(),seen:false});
+    }
+    await db.ref('siteLogs/staff').push({action:'approveAppeal',target:uid||id,details:id,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+    return;
+  }
+
+  const ad=e.target.closest('[data-appeal-deny]');
+  if(ad&&window.db){
+    const id=ad.getAttribute('data-appeal-deny');
+    const a=(window.banAppeals||banAppeals||{})[id]||{};
+    const reason=prompt('Deny reason','Appeal denied.');
+    if(reason===null)return;
+    await db.ref('siteBanAppeals/'+id).update({status:'denied',reply:reason,resolvedBy:me.uid,resolvedByName:me.username||me.name||'staff',resolvedAt:Date.now()});
+    if(a.uid)await db.ref('siteNotifications/'+a.uid).push({text:'Ban appeal denied: '+reason,type:'info',createdAt:Date.now(),seen:false});
+    await db.ref('siteLogs/staff').push({action:'denyAppeal',target:a.uid||id,details:reason,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+    return;
+  }
+
+  const ar=e.target.closest('[data-appeal-reply]');
+  if(ar&&window.db){
+    const id=ar.getAttribute('data-appeal-reply');
+    const a=(window.banAppeals||banAppeals||{})[id]||{};
+    const reply=prompt('Reply to appeal','Staff reviewed your appeal.');
+    if(reply===null)return;
+    await db.ref('siteBanAppeals/'+id).update({reply,replyBy:me.uid,replyByName:me.username||me.name||'staff',replyAt:Date.now()});
+    if(a.uid)await db.ref('siteNotifications/'+a.uid).push({text:'Ban appeal reply: '+reply,type:'info',createdAt:Date.now(),seen:false});
+    await db.ref('siteLogs/staff').push({action:'replyAppeal',target:a.uid||id,details:reply,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+    return;
+  }
+
+  const ga=e.target.closest('[data-game-request-approve]');
+  if(ga&&window.db){
+    const id=ga.getAttribute('data-game-request-approve');
+    await db.ref('siteGameRequests/'+id).update({status:'approved',resolvedBy:me.uid,resolvedByName:me.username||me.name||'staff',resolvedAt:Date.now()});
+    await db.ref('siteLogs/staff').push({action:'approveGameRequest',target:id,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+    return;
+  }
+
+  const gd=e.target.closest('[data-game-request-deny]');
+  if(gd&&window.db){
+    const id=gd.getAttribute('data-game-request-deny');
+    const reason=prompt('Deny reason','Game request denied.');
+    if(reason===null)return;
+    await db.ref('siteGameRequests/'+id).update({status:'denied',denyReason:reason,resolvedBy:me.uid,resolvedByName:me.username||me.name||'staff',resolvedAt:Date.now()});
+    await db.ref('siteLogs/staff').push({action:'denyGameRequest',target:id,details:reason,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+    return;
+  }
+
+  const gx=e.target.closest('[data-game-request-delete]');
+  if(gx&&window.db&&confirm('Delete this game request?')){
+    const id=gx.getAttribute('data-game-request-delete');
+    await db.ref('siteGameRequests/'+id).remove();
+    await db.ref('siteLogs/staff').push({action:'deleteGameRequest',target:id,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+    return;
+  }
+});
+
 </script>
 
 <script>
 (function(){
-  const tabIds=['dashboard','users','reports','analytics','games','chat','announcements','logs','devtools'];
-  const panelMap={dashboard:'dashboardPanel',users:'usersPanel',reports:'reportsPanel',analytics:'analyticsPanel',games:'gamesPanel',chat:'chatPanel',announcements:'announcementsPanel',logs:'logsPanel',devtools:'devPanel'};
+  const tabIds=['dashboard','users','reports','analytics','appeals','filters','alts','search','archive','staff','requests','scheduler','health','games','chat','announcements','logs','devtools'];
+  const panelMap={dashboard:'dashboardPanel',users:'usersPanel',reports:'reportsPanel',analytics:'analyticsPanel',appeals:'appealsPanel',filters:'filtersPanel',alts:'altsPanel',search:'searchPanel',archive:'archivePanel',staff:'staffPanel',requests:'requestsPanel',scheduler:'schedulerPanel',health:'healthPanel',games:'gamesPanel',chat:'chatPanel',announcements:'announcementsPanel',logs:'logsPanel',devtools:'devPanel'};
   function activeId(){
     const id=(new URLSearchParams(location.search).get('id')||'dashboard').toLowerCase();
     return tabIds.includes(id)?id:'dashboard';
