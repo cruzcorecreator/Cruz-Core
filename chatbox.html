@@ -405,24 +405,10 @@ async function maybeTriggerNova(messageText){
   if(novaBusy) return;
 
   const lower = textMsg.toLowerCase();
+  const askerName = (me?.name || me?.displayName || me?.username || 'user');
   const mentioned = /(^|\s)@?nova([\s:,.!?]|$)/i.test(textMsg) || /(^|\s)@?bot([\s:,.!?]|$)/i.test(textMsg);
 
-  const interesting =
-    textMsg.includes('?') ||
-    textMsg.includes('😭') ||
-    textMsg.includes('💀') ||
-    lower.includes('bro') ||
-    lower.includes('crazy') ||
-    lower.includes('wild') ||
-    lower.includes('help') ||
-    lower.includes('how') ||
-    lower.includes('fr') ||
-    lower.includes('lowkey');
-
-  const randomReply = interesting && Math.random() < 0.08;
-  if(!mentioned && !randomReply) return;
-
-  if(!mentioned && Date.now() - novaLastReply < 120000) return;
+  if(!mentioned) return;
 
   novaBusy = true;
 
@@ -435,7 +421,7 @@ async function maybeTriggerNova(messageText){
     snap.forEach(child=>{
       const v = child.val() || {};
       if(v.uid === NOVA_UID) return;
-      msgs.push(`${v.username || v.name || 'user'}: ${v.text || ''}`);
+      msgs.push(`${v.name || v.displayName || v.username || 'user'}: ${v.text || ''}`);
     });
 
     const systemPrompt = `
@@ -450,15 +436,12 @@ RULES:
 - Never say "As an AI".
 - Don't respond to every message.
 - Act human.
-- Respond like a Gen Z internet-native who lives online and communicates primarily through vibes, slang, and cultural shorthand.
-- Use casual conversational language.
-- Lean into modern slang naturally.
+- Use casual conversational language, like texting in a group chat.
+- You can use a little Gen Z slang sometimes, but do not overdo it.
 - Keep things concise and expressive.
-- Use playful sarcasm and meme-adjacent phrasing.
-- Use terms like lowkey, highkey, ngl, fr, vibes, it's giving, no because, wild, iconic, unhinged, valid, bet, say less naturally.
-- Reactions should feel authentic and dramatic but not cringe.
-- Humor should feel ironic and internet-literate.
+- A little playful humor is okay.
 - Never sound corporate or formal.
+- Do not sound overly Gen Z or like a meme page.
 - Do not use em-dashes.
 - Your reply should be ONLY the message text, not "Nova:" first.
 `;
@@ -467,9 +450,11 @@ RULES:
 CHAT:
 ${msgs.join('\n')}
 
-Reply naturally to the current conversation.
-If you were mentioned, answer directly.
-If you were not mentioned, only add a quick funny/interesting comment.
+The person who directly called your name is: ${askerName}.
+Only answer ${askerName}'s message.
+Use the chat history only as context.
+Do not answer an older question from someone else unless ${askerName} also asked it.
+If you use a name, use display names from the chat, not usernames.
 Keep it short.
 `;
 
@@ -486,7 +471,7 @@ Keep it short.
           {role:'user', content:userPrompt}
         ],
         temperature:0.95,
-        max_tokens:mentioned ? 120 : 50
+        max_tokens:120
       })
     });
 

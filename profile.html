@@ -123,8 +123,9 @@ saveProfile.onclick=async()=>{
   patch.useGlowName=!!(r.glowName && nameEffect.value==='glow');
   patch.useRainbowName=!!(r.rainbowName && nameEffect.value==='rainbow');
   await FGAuth.updateProfilePatch(patch);
-  if(window.FGAuth?.db&&window.FGUser?.uid){await FGAuth.db().ref('siteUsers/'+window.FGUser.uid).update({bio:patch.bio});}
+  if(window.FGAuth?.db&&window.FGUser?.uid){await FGAuth.db().ref('siteUsers/'+window.FGUser.uid).update(patch);}
   window.FGUser={...(window.FGUser||{}),...patch};
+  try{localStorage.setItem('fg.user.v4',JSON.stringify(window.FGUser));localStorage.setItem('fg.user.v3',JSON.stringify(window.FGUser));}catch(e){}
   status.textContent='saved to Firebase + localStorage';
   uploadedData='';pfpFile.value='';
   fill();
