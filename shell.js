@@ -1,6 +1,6 @@
 (function(){
-  const rankPower={banned:-1,member:0,helper:1,mod:2,admin:3,tester:4,owner:5};
-  const roleEmoji={owner:'👑',tester:'🧪',admin:'🛡️',mod:'🔨',helper:'✨',banned:'🚫',member:''};
+  const rankPower={banned:-1,member:0,bot:0,helper:1,mod:2,admin:3,tester:4,owner:5};
+  const roleEmoji={owner:'👑',tester:'🧪',admin:'🛡️',mod:'🔨',helper:'✨',bot:'🤖',banned:'🚫',member:''};
   const page=(location.pathname.split('/').pop()||'index.html').toLowerCase();
   const nav=[['index.html','🏠','Home'],['games.html','🎮','Games'],['chatbox.html','💬','Chat'],['messages.html','✉️','Messages'],['users.html','👥','Users'],['profile.html','👤','Profile']];
   function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}

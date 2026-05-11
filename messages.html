@@ -1,5 +1,17 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#050916"><title>GameHub — Messages</title><link rel="stylesheet" href="ui.css"></head><body>
 <section class="grid layout-messages"><main class="card chat-shell conversation-main"><header class="chat-head"><div><h1 style="margin:0;font-size:1.55rem" id="chatTitle">Pick a conversation</h1><p class="muted" style="margin:4px 0 0" id="chatSub">Private one-on-one messages.</p></div><a class="btn" href="users.html">New DM</a></header><div class="messages" id="dmMessages"><div class="empty">Choose a person on the right.</div></div><form class="composer" id="dmForm" action="javascript:void(0)"><input id="dmInput" maxlength="600" placeholder="Message..." autocomplete="off"><button class="btn primary" id="dmSend" type="button">Send</button></form></main><aside class="card card-pad conversation-list"><div class="section-head"><h1 style="margin:0;font-size:1.4rem">Conversations</h1></div><div class="list" id="convos"><div class="empty">loading conversations...</div></div></aside></section>
+
+<div class="modal-lite" id="reportModal">
+  <div class="modal-box">
+    <h2 style="margin-top:0">Report</h2>
+    <p class="muted" id="reportTargetText">Report this item.</p>
+    <div class="field"><label>Reason</label><select id="reportReason" class="search"><option>spam</option><option>harassment</option><option>nsfw</option><option>impersonation</option><option>exploit</option><option>bypass</option><option>other</option></select></div>
+    <div class="field"><label>Description</label><textarea id="reportDescription" maxlength="500" placeholder="Tell staff what happened..."></textarea></div>
+    <div class="button-row"><button class="btn primary" id="submitReport" type="button">Submit Report</button><button class="btn" id="cancelReport" type="button">Cancel</button></div>
+    <p class="muted" id="reportStatus"></p>
+  </div>
+</div>
+
 <script src="login-guard.js"></script><script src="shell.js"></script><script>
 const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 let db, me, users = {}, dmIndex = {}, active = null, activeWith = null;
@@ -46,7 +58,7 @@ function renderMessages() {
   dmMessages.innerHTML = list.map(m => {
     const mine = m.from === me.uid;
     const u = mine ? me : (users[m.from] || { uid: m.from, name: m.fromName, username: m.fromUsername });
-    return `<div class="msg ${mine ? 'mine' : ''}">${avatar(u)}<div class="msg-body"><a class="msg-name" href="viewprofile.html?id=${encodeURIComponent(m.from || '')}">${esc(mine ? 'You' : (u.name || u.username || 'user'))}</a><span class="msg-time">${m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : ''}</span><div class="msg-text">${esc(m.text || '')}</div></div></div>`;
+    const reportBtn = !mine ? `<button class="msg-info-btn" data-report-dm="${esc(m.id||'')}" type="button" title="Report DM">🚩</button>` : ''; return `<div class="msg ${mine ? 'mine' : ''}" data-dmid="${esc(m.id||'')}">${avatar(u)}<div class="msg-body"><a class="msg-name" href="viewprofile.html?id=${encodeURIComponent(m.from || '')}">${esc(mine ? 'You' : (u.name || u.username || 'user'))}</a>${reportBtn}<span class="msg-time">${m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : ''}</span><div class="msg-text">${esc(m.text || '')}</div></div></div>`;
   }).join('') || '<div class="empty">No messages yet.</div>';
   dmMessages.scrollTop = dmMessages.scrollHeight;
 }
@@ -128,6 +140,17 @@ async function sendDM() {
   }
 }
 
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-report-dm]');
+  if(!b)return;
+  const id=b.dataset.reportDm;
+  const m=activeMessages.get(id)||{};
+  if(m.from===me.uid){return;}
+  const u=users[m.from]||{uid:m.from,name:m.fromName,username:m.fromUsername};
+  openReportModal({type:'dm',targetUid:m.from||'',targetUsername:u.username||'',targetName:u.name||u.username||m.from||'',targetId:id,messageId:id,messageText:m.text||'',context:'private DM message'});
+});
+
 document.addEventListener('fg-auth-ready', async () => {
   me = window.FGUser;
   await FGAuth.initFirebase();
@@ -162,4 +185,47 @@ dmForm.addEventListener('submit', e => {
   sendDM();
   return false;
 });
-</script></body></html>
+</script>
+<script>
+(function(){
+  let currentReport=null, reportDb=null;
+  function escReport(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+  async function getReportDb(){if(reportDb)return reportDb;await FGAuth.initFirebase();reportDb=FGAuth.db();return reportDb;}
+  window.openReportModal=function(data){
+    currentReport=data||{};
+    const modal=document.getElementById('reportModal');
+    const text=document.getElementById('reportTargetText');
+    const status=document.getElementById('reportStatus');
+    if(text)text.textContent='Reporting '+(currentReport.targetName||currentReport.targetUsername||currentReport.targetUid||currentReport.targetId||currentReport.type||'item');
+    if(status)status.textContent='';
+    if(document.getElementById('reportDescription'))reportDescription.value='';
+    modal?.classList.add('open');
+  };
+  async function submitReport(){
+    if(!currentReport)return;
+    const db=await getReportDb();
+    const me=window.FGUser||{};
+    const payload={
+      ...currentReport,
+      reason:document.getElementById('reportReason')?.value||'other',
+      description:(document.getElementById('reportDescription')?.value||'').trim(),
+      status:'open',
+      reporterUid:me.uid||'',
+      reporterUsername:me.username||'',
+      reporterName:me.name||me.username||'',
+      by:me.uid||'',
+      byName:me.name||me.username||'',
+      createdAt:Date.now()
+    };
+    await db.ref('siteReports').push(payload);
+    if(document.getElementById('reportStatus'))reportStatus.textContent='Report sent.';
+    setTimeout(()=>document.getElementById('reportModal')?.classList.remove('open'),600);
+  }
+  document.addEventListener('click',e=>{
+    if(e.target?.id==='cancelReport')document.getElementById('reportModal')?.classList.remove('open');
+    if(e.target?.id==='submitReport')submitReport();
+    if(e.target===document.getElementById('reportModal'))document.getElementById('reportModal')?.classList.remove('open');
+  });
+})();
+</script>
+</body></html>

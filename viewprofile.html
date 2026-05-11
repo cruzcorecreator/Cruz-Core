@@ -1,5 +1,17 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#050916"><title>GameHub — View Profile</title><link rel="stylesheet" href="ui.css"></head><body>
-<section class="grid layout-games"><main><section class="profile-hero" id="profileHero"><div class="avatar big-avatar" id="avatar">?</div><div><h1 class="page-title" id="nameText">profile</h1><p class="muted" id="bioText">loading...</p><span class="rank" id="roleText">member</span><span id="singleTagText"></span><div class="profile-level-card" id="levelText">Lv 0</div></div></section><section class="card card-pad" style="margin-top:16px"><h2>Actions</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" id="messageBtn">Message</button><button class="btn" id="followBtn">Follow</button><button class="btn" id="friendBtn">Add Friend</button><button class="btn" id="blockBtn">Block</button></div><p class="muted" id="status"></p></section><section class="card card-pad" style="margin-top:16px"><h2>Level Rewards</h2><div class="reward-timeline" id="rewardList"></div></section></main><aside class="right-col"><section class="card card-pad"><h2>Recently Played</h2><div class="list" id="recentGames"></div></section><section class="card card-pad"><h2>Info</h2><div class="list" id="stats"></div></section></aside></section>
+<section class="grid layout-games"><main><section class="profile-hero" id="profileHero"><div class="avatar big-avatar" id="avatar">?</div><div><h1 class="page-title" id="nameText">profile</h1><p class="muted" id="bioText">loading...</p><span class="rank" id="roleText">member</span><span id="singleTagText"></span><div class="profile-level-card" id="levelText">Lv 0</div></div></section><section class="card card-pad" style="margin-top:16px"><h2>Actions</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" id="messageBtn">Message</button><button class="btn" id="followBtn">Follow</button><button class="btn" id="friendBtn">Add Friend</button><button class="btn" id="blockBtn">Block</button><button class="btn danger" id="reportProfileBtn" type="button">Report User</button></div><p class="muted" id="status"></p></section><section class="card card-pad" style="margin-top:16px"><h2>Level Rewards</h2><div class="reward-timeline" id="rewardList"></div></section></main><aside class="right-col"><section class="card card-pad"><h2>Recently Played</h2><div class="list" id="recentGames"></div></section><section class="card card-pad"><h2>Info</h2><div class="list" id="stats"></div></section></aside></section>
+
+<div class="modal-lite" id="reportModal">
+  <div class="modal-box">
+    <h2 style="margin-top:0">Report</h2>
+    <p class="muted" id="reportTargetText">Report this item.</p>
+    <div class="field"><label>Reason</label><select id="reportReason" class="search"><option>spam</option><option>harassment</option><option>nsfw</option><option>impersonation</option><option>exploit</option><option>bypass</option><option>other</option></select></div>
+    <div class="field"><label>Description</label><textarea id="reportDescription" maxlength="500" placeholder="Tell staff what happened..."></textarea></div>
+    <div class="button-row"><button class="btn primary" id="submitReport" type="button">Submit Report</button><button class="btn" id="cancelReport" type="button">Cancel</button></div>
+    <p class="muted" id="reportStatus"></p>
+  </div>
+</div>
+
 <script src="login-guard.js"></script><script src="shell.js"></script><script>
 const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const id=new URLSearchParams(location.search).get('id');let db,me,u={};
@@ -38,5 +50,48 @@ document.addEventListener('fg-auth-ready',async()=>{me=window.FGUser;await FGAut
 messageBtn.onclick=async()=>{location.href='messages.html?with='+encodeURIComponent(id)};
 followBtn.onclick=async()=>{await Promise.all([db.ref('siteSocial/following/'+me.uid+'/'+id).set(true),db.ref('siteSocial/followers/'+id+'/'+me.uid).set(true)]);status.textContent='followed'};
 friendBtn.onclick=async()=>{await Promise.all([db.ref('siteSocial/friendRequests/'+id+'/'+me.uid).set({uid:me.uid,username:me.username,name:me.name,createdAt:Date.now()}),db.ref('siteSocial/friendRequestsSent/'+me.uid+'/'+id).set(true)]);status.textContent='friend request sent'};
-blockBtn.onclick=async()=>{await Promise.all([db.ref('siteSocial/blocks/'+me.uid+'/'+id).set(true),db.ref('siteSocial/blockedBy/'+id+'/'+me.uid).set(true)]);status.textContent='blocked'};
-</script></body></html>
+blockBtn.onclick=async()=>{await Promise.all([db.ref('siteSocial/blocks/'+me.uid+'/'+id).set(true),db.ref('siteSocial/blockedBy/'+id+'/'+me.uid).set(true)]);status.textContent='blocked'};reportProfileBtn.onclick=()=>openReportModal({type:'profile',targetUid:id,targetUsername:u.username||'',targetName:u.name||u.username||id,context:'public profile page'});
+</script>
+<script>
+(function(){
+  let currentReport=null, reportDb=null;
+  function escReport(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+  async function getReportDb(){if(reportDb)return reportDb;await FGAuth.initFirebase();reportDb=FGAuth.db();return reportDb;}
+  window.openReportModal=function(data){
+    currentReport=data||{};
+    const modal=document.getElementById('reportModal');
+    const text=document.getElementById('reportTargetText');
+    const status=document.getElementById('reportStatus');
+    if(text)text.textContent='Reporting '+(currentReport.targetName||currentReport.targetUsername||currentReport.targetUid||currentReport.targetId||currentReport.type||'item');
+    if(status)status.textContent='';
+    if(document.getElementById('reportDescription'))reportDescription.value='';
+    modal?.classList.add('open');
+  };
+  async function submitReport(){
+    if(!currentReport)return;
+    const db=await getReportDb();
+    const me=window.FGUser||{};
+    const payload={
+      ...currentReport,
+      reason:document.getElementById('reportReason')?.value||'other',
+      description:(document.getElementById('reportDescription')?.value||'').trim(),
+      status:'open',
+      reporterUid:me.uid||'',
+      reporterUsername:me.username||'',
+      reporterName:me.name||me.username||'',
+      by:me.uid||'',
+      byName:me.name||me.username||'',
+      createdAt:Date.now()
+    };
+    await db.ref('siteReports').push(payload);
+    if(document.getElementById('reportStatus'))reportStatus.textContent='Report sent.';
+    setTimeout(()=>document.getElementById('reportModal')?.classList.remove('open'),600);
+  }
+  document.addEventListener('click',e=>{
+    if(e.target?.id==='cancelReport')document.getElementById('reportModal')?.classList.remove('open');
+    if(e.target?.id==='submitReport')submitReport();
+    if(e.target===document.getElementById('reportModal'))document.getElementById('reportModal')?.classList.remove('open');
+  });
+})();
+</script>
+</body></html>

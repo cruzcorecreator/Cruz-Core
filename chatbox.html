@@ -14,13 +14,61 @@
   </div>
 </div>
 
+
+<div class="modal-lite" id="reportModal">
+  <div class="modal-box">
+    <h2 style="margin-top:0">Report</h2>
+    <p class="muted" id="reportTargetText">Report this item.</p>
+    <div class="field"><label>Reason</label><select id="reportReason" class="search"><option>spam</option><option>harassment</option><option>nsfw</option><option>impersonation</option><option>exploit</option><option>bypass</option><option>other</option></select></div>
+    <div class="field"><label>Description</label><textarea id="reportDescription" maxlength="500" placeholder="Tell staff what happened..."></textarea></div>
+    <div class="button-row"><button class="btn primary" id="submitReport" type="button">Submit Report</button><button class="btn" id="cancelReport" type="button">Cancel</button></div>
+    <p class="muted" id="reportStatus"></p>
+  </div>
+</div>
+
 <script src="login-guard.js"></script><script src="shell.js"></script><script>
 (function(){
 const DB_ROOT='fun-and-games-chat';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-let db=null, users={}, presence={}, customCommands={}, chatSettings={}, me=null, loaded=false; let lastChatSendAt=0;
-const roleEmoji=r=>({owner:'👑',tester:'🧪',admin:'🛡️',mod:'🔨',helper:'✨',banned:'🚫',member:''}[r]||'');
+let db=null, fs=null, users={}, presence={}, customCommands={}, chatSettings={}, chatMessagesCache={}, me=null, loaded=false; let lastChatSendAt=0; const NOVA_UID='bot-nova';
+
+const GROQ_API_KEY='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';
+let novaLastReply=0;
+let novaBusy=false;
+
+const NOVA_SYSTEM_PROMPT=`
+You are Nova, a real user in a school game website chatroom.
+
+You are NOT an assistant.
+You are a casual user.
+
+RULES:
+- Keep messages short.
+- Never use markdown.
+- Never say "As an AI".
+- Do not cuss or use profanity.
+- Do not use swear words.
+- Do not say or imply you are high, drunk, hungover, faded, intoxicated, on drugs, or using substances.
+- Do not start your message with "Nova:" or your own name.
+- Do not label your message.
+- Do not say you are doing, checking, searching, looking up, generating, processing, working on, or handling anything.
+- Do not describe your own actions. Just respond naturally.
+- Don't respond to every message.
+- Act human.
+- Respond like a Gen Z internet-native who lives online and communicates primarily through vibes, slang, and cultural shorthand.
+- Use casual conversational language.
+- Lean into modern slang naturally.
+- Keep things concise and expressive.
+- Use playful sarcasm and meme-adjacent phrasing.
+- Use terms like lowkey, highkey, ngl, fr, vibes, it’s giving, no because, wild, iconic, unhinged, valid, bet, say less naturally.
+- Reactions should feel authentic and dramatic but not cringe.
+- Humor should feel ironic and internet-literate.
+- Never sound corporate or formal.
+- Does not use em-dashes.
+`;
+ const NOVA_COLLECTIONS=['ai_chats','chatbot','gemini_chat','gemini_chats','nova_chats'];
+const roleEmoji=r=>({owner:'👑',tester:'🧪',admin:'🛡️',mod:'🔨',helper:'✨',bot:'🤖',banned:'🚫',member:''}[r]||'');
 function pickPhoto(u){return (window.FGAuth?.pickPhoto?.(u))||String(u?.photoURL||u?.pfp||u?.pfpUrl||u?.profilePic||u?.profilePicture||u?.profileImage||u?.avatar||u?.avatarUrl||u?.picture||u?.photo||u?.image||u?.icon||'').trim()}
 function displayName(u){return (u&&(u.name||u.displayName||u.username))||'user'}
 function mergedUser(uid, extra){const base=users[uid]||{};return {...base,...(extra||{}),uid,photoURL:pickPhoto(base)||pickPhoto(extra)}}
@@ -67,12 +115,12 @@ function renderOne(m){
   const u=mergedUser(m.uid,m);
   const rank=u.role||u.rank||m.role||'member';
   const lvl=Number(u.level||0);
-  const staffTools = canManageMessage(m) ? `<span class="msg-tools"><button class="msg-info-btn" data-msg-info="${esc(m.id||'')}" type="button" title="Message tools">ⓘ</button></span>` : '';
+  const staffTools = `<span class="msg-tools">${canManageMessage(m)?`<button class="msg-info-btn" data-msg-info="${esc(m.id||'')}" type="button" title="Message tools">ⓘ</button>`:''}<button class="msg-info-btn" data-report-message="${esc(m.id||'')}" type="button" title="Report message">🚩</button></span>`;
   const levelHtml = lvl ? `<span class="level-pill">Lv ${lvl}</span>` : '';
-  return `<div class="msg" data-mid="${esc(m.id||'')}">${av(u)}<div class="msg-body"><a class="msg-name ${nameClass(u)}" ${nameStyle(u)} href="viewprofile.html?id=${encodeURIComponent(m.uid||'')}">${esc(displayName(u))} ${roleEmoji(rank)} <span class="rank">${esc(rank)}</span>${levelHtml}${rewardBadges(u)}</a>${staffTools}<span class="msg-time">${m.createdAt?new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):''}</span><div class="msg-text">${esc(m.text||'')}</div></div></div>`;
+  return `<div class="msg" data-mid="${esc(m.id||'')}">${av(u)}<div class="msg-body"><a class="msg-name ${nameClass(u)}" ${nameStyle(u)} href="viewprofile.html?id=${encodeURIComponent(m.uid||'')}">${esc(displayName(u))} ${roleEmoji(rank)} <span class="rank ${rank==='bot'?'bot-tag':''}">${esc(rank)}</span>${levelHtml}${rewardBadges(u)}</a>${staffTools}<span class="msg-time">${m.createdAt?new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):''}</span><div class="msg-text">${esc(m.text||'')}</div></div></div>`;
 }
 function scrollBottom(){const box=$('messages'); if(box) box.scrollTop=box.scrollHeight;}
-function insertOrUpdate(m){const box=$('messages'); if(!box)return; const id=m.id||m.localId; if(!id)return; const existing=box.querySelector(`[data-mid="${CSS.escape(id)}"]`); const html=renderOne(m); if(existing){existing.outerHTML=html;}else{ if(!loaded){box.innerHTML=''; loaded=true;} box.insertAdjacentHTML('beforeend',html);} scrollBottom();}
+function insertOrUpdate(m){const box=$('messages'); if(!box)return; const id=m.id||m.localId; if(!id)return; chatMessagesCache[id]=m; const existing=box.querySelector(`[data-mid="${CSS.escape(id)}"]`); const html=renderOne(m); if(existing){existing.outerHTML=html;}else{ if(!loaded){box.innerHTML=''; loaded=true;} box.insertAdjacentHTML('beforeend',html);} scrollBottom();}
 
 function closeMsgTools(){
   document.querySelectorAll('.msg-tools-open').forEach(el=>el.remove());
@@ -114,7 +162,7 @@ async function saveMessageEdit(messageId){
 function renderMembers(){const el=$('members'), count=$('chatCount'); if(!el||!count)return; const online=Object.values(presence).filter(p=>p&&p.online&&Date.now()-Number(p.lastSeen||0)<90000); count.textContent=online.length+' online'; el.innerHTML=online.map(p=>{const u=mergedUser(p.uid,p);return `<a class="person" href="viewprofile.html?id=${encodeURIComponent(p.uid)}">${av(u)}<span><b>${esc(displayName(u))} ${roleEmoji(u.role||u.rank||p.role)}</b><span>${esc(p.currentPage||'online')}</span></span><span class="status-dot"></span></a>`}).join('')||'<p class="muted">Nobody online.</p>'}
 let sending=false;
 
-const rolePower = r => ({banned:-1,member:0,helper:1,mod:2,admin:3,tester:4,owner:5}[r] ?? 0);
+const rolePower = r => ({banned:-1,member:0,bot:0,helper:1,mod:2,admin:3,tester:4,owner:5}[r] ?? 0);
 function currentMe(){
   const base = window.FGUser || me || {};
   const live = users[base.uid] || {};
@@ -133,7 +181,9 @@ function splitArgs(raw){
   const out=[]; let cur='', q=false;
   for(const ch of raw){
     if(ch === '"'){ q=!q; continue; }
-    if(/\s/.test(ch) && !q){ if(cur){out.push(cur);cur=''}; }
+    if(/\s/.test(ch) && !q){ if(cur){out.push(cur);
+
+cur=''}; }
     else cur += ch;
   }
   if(cur) out.push(cur);
@@ -303,6 +353,211 @@ async function runCommand(raw){
   }
 }
 
+
+function novaPromptFrom(text){
+  const t=String(text||'').trim();
+  if(/^@nova\b/i.test(t))return t.replace(/^@nova\b[:,]?\s*/i,'').trim();
+  if(/^@bot\b/i.test(t))return t.replace(/^@bot\b[:,]?\s*/i,'').trim();
+  if(/^\/ask\b/i.test(t))return t.replace(/^\/ask\b\s*/i,'').trim();
+  return '';
+}
+function novaResponseText(data={}){
+  return data.response || data.output || data.answer || data.text || data.reply || data.message || data.result || data.responseText || data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+async function novaLog(status, details='', extra={}){
+  try{
+    if(!db)return;
+    await db.ref('siteNovaLogs').push({
+      status,
+      details:String(details||'').slice(0,1000),
+      uid:me?.uid||'',
+      username:me?.username||'',
+      createdAt:Date.now(),
+      ...extra
+    });
+  }catch(e){console.warn('Nova log failed',e)}
+}
+async function postNovaMessage(text, requestId=''){
+  if(!text || !db)return;
+  await db.ref(DB_ROOT+'/messages').push({
+    uid:NOVA_UID,
+    username:'nova',
+    name:'Nova',
+    displayName:'Nova',
+    role:'bot',
+    rank:'bot',
+    isBot:true,
+    bot:true,
+    text:String(text).slice(0,1200),
+    aiRequestId:requestId,
+    createdAt:Date.now()
+  });
+}
+async function sendToNova(){ return; }
+
+
+
+async function maybeTriggerNova(messageText){
+  if(!messageText || !db) return;
+
+  const textMsg = String(messageText || '').trim();
+  if(!textMsg || textMsg.length < 2) return;
+  if(novaBusy) return;
+
+  const lower = textMsg.toLowerCase();
+  const mentioned = /(^|\s)@?nova([\s:,.!?]|$)/i.test(textMsg) || /(^|\s)@?bot([\s:,.!?]|$)/i.test(textMsg);
+
+  const interesting =
+    textMsg.includes('?') ||
+    textMsg.includes('😭') ||
+    textMsg.includes('💀') ||
+    lower.includes('bro') ||
+    lower.includes('crazy') ||
+    lower.includes('wild') ||
+    lower.includes('help') ||
+    lower.includes('how') ||
+    lower.includes('fr') ||
+    lower.includes('lowkey');
+
+  const randomReply = interesting && Math.random() < 0.08;
+  if(!mentioned && !randomReply) return;
+
+  if(!mentioned && Date.now() - novaLastReply < 120000) return;
+
+  novaBusy = true;
+
+  try{
+    await novaLog('groq-triggered', textMsg.slice(0,500));
+
+    const snap = await db.ref(DB_ROOT + '/messages').limitToLast(10).once('value');
+    const msgs = [];
+
+    snap.forEach(child=>{
+      const v = child.val() || {};
+      if(v.uid === NOVA_UID) return;
+      msgs.push(`${v.username || v.name || 'user'}: ${v.text || ''}`);
+    });
+
+    const systemPrompt = `
+You are Nova, a real user in a school game website chatroom.
+
+You are NOT an assistant.
+You are a casual user.
+
+RULES:
+- Keep messages short.
+- Never use markdown.
+- Never say "As an AI".
+- Don't respond to every message.
+- Act human.
+- Respond like a Gen Z internet-native who lives online and communicates primarily through vibes, slang, and cultural shorthand.
+- Use casual conversational language.
+- Lean into modern slang naturally.
+- Keep things concise and expressive.
+- Use playful sarcasm and meme-adjacent phrasing.
+- Use terms like lowkey, highkey, ngl, fr, vibes, it's giving, no because, wild, iconic, unhinged, valid, bet, say less naturally.
+- Reactions should feel authentic and dramatic but not cringe.
+- Humor should feel ironic and internet-literate.
+- Never sound corporate or formal.
+- Do not use em-dashes.
+- Your reply should be ONLY the message text, not "Nova:" first.
+`;
+
+    const userPrompt = `
+CHAT:
+${msgs.join('\n')}
+
+Reply naturally to the current conversation.
+If you were mentioned, answer directly.
+If you were not mentioned, only add a quick funny/interesting comment.
+Keep it short.
+`;
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer ' + GROQ_API_KEY
+      },
+      body:JSON.stringify({
+        model:'llama-3.1-8b-instant',
+        messages:[
+          {role:'system', content:systemPrompt},
+          {role:'user', content:userPrompt}
+        ],
+        temperature:0.95,
+        max_tokens:mentioned ? 120 : 50
+      })
+    });
+
+    const data = await res.json();
+    await novaLog('groq-api-response', JSON.stringify(data).slice(0,1500));
+
+    if(!res.ok){
+      await novaLog('groq-http-error', JSON.stringify(data).slice(0,1500));
+      novaBusy = false;
+      return;
+    }
+
+    let reply = data?.choices?.[0]?.message?.content?.trim();
+
+    if(reply){
+      reply = reply
+        .replace(/^\s*(nova|bot)\s*:\s*/i, '')
+        .replace(/^\s*(i('|’)m|i am|im)\s+(checking|looking|searching|working|doing|generating|processing|handling)[^.!?]*[.!?]?\s*/i, '')
+        .replace(/^\s*(let me|lemme)\s+(check|look|see|search)[^.!?]*[.!?]?\s*/i, '')
+        .replace(/^\s*(one sec|hold on|give me a sec)[,.!\s]*/i, '')
+        .replace(/\b(high|drunk|hungover|faded|intoxicated|stoned)\b/gi, 'tired')
+        .replace(/\b(weed|drugs|alcohol)\b/gi, 'stuff')
+        .replace(/\b(fuck|shit|bitch|asshole|dick|damn|hell)\b/gi, match => {
+          const map = {
+            fuck:'frick',
+            shit:'crap',
+            bitch:'jerk',
+            asshole:'jerk',
+            dick:'dude',
+            damn:'dang',
+            hell:'heck'
+          };
+          return map[String(match).toLowerCase()] || 'dang';
+        })
+        .trim();
+    }
+
+    if(!reply){
+      await novaLog('groq-empty-reply', JSON.stringify(data).slice(0,1000));
+      novaBusy = false;
+      return;
+    }
+
+    await db.ref(DB_ROOT + '/messages').push({
+      uid:NOVA_UID,
+      username:'nova',
+      name:'Nova',
+      displayName:'Nova',
+      role:'bot',
+      rank:'bot',
+      customTag:'BOT',
+      isBot:true,
+      bot:true,
+      text:reply.slice(0,1200),
+      createdAt:Date.now(),
+      photoURL:'https://mir-s3-cdn-cf.behance.net/projects/404/aa9f81144900743.Y3JvcCwxMTkyLDkzMywxNCww.jpg',
+      pfp:'https://mir-s3-cdn-cf.behance.net/projects/404/aa9f81144900743.Y3JvcCwxMTkyLDkzMywxNCww.jpg'
+    });
+
+    novaLastReply = Date.now();
+    await novaLog('nova-posted', reply.slice(0,500));
+
+  }catch(err){
+    console.error('nova groq error', err);
+    try{ await novaLog('groq-error', err?.message || String(err)); }catch(e){}
+  }finally{
+    novaBusy = false;
+  }
+}
+
+
 async function sendChat(){
   if(sending)return;
   me=window.FGUser;
@@ -316,7 +571,7 @@ async function sendChat(){
     window.FGAuth?.showNotice?.('Slowmode: wait '+Math.ceil((slowMs-(Date.now()-lastChatSendAt))/1000)+'s.');
     return;
   }
-  if(text.startsWith('/')){
+  if(/^\/ask\b/i.test(text)){ /* let /ask post normally and trigger Nova */ } else if(text.startsWith('/')){
     input.value=''; input.focus();
     await runCommand(text);
     return;
@@ -325,10 +580,14 @@ async function sendChat(){
   input.value=''; input.focus();
   try{
     await db.ref(DB_ROOT+'/messages').push({uid:me.uid,username:me.username,name:me.name||me.displayName||me.username,role:me.role||me.rank||'member',photoURL:pickPhoto(me),pfp:pickPhoto(me),nameColor:me.nameColor||'',customTag:me.customTag||'',useRainbowName:!!me.useRainbowName,useGlowName:!!me.useGlowName,level:Number(me.level||0),text:text.slice(0,600),createdAt:Date.now()}); lastChatSendAt=Date.now();
+
+    setTimeout(()=>maybeTriggerNova(text),25);
   }catch(err){console.error(err);window.FGAuth?.showNotice?.('Message failed to send.');input.value=text;}
   finally{setTimeout(()=>{sending=false},150)}
 }
 document.addEventListener('click',e=>{
+  const report=e.target.closest('[data-report-message]');
+  if(report){const id=report.dataset.reportMessage;const m=chatMessagesCache[id]||{};const u=mergedUser(m.uid,m);openReportModal({type:'message',targetUid:m.uid||'',targetUsername:u.username||'',targetName:u.name||u.username||m.username||m.uid||'',targetId:id,messageId:id,messageText:m.text||'',context:'global chat message'});return;}
   const info=e.target.closest('[data-msg-info]');
   if(info){openMsgTools(info.dataset.msgInfo,info);return;}
   const del=e.target.closest('[data-msg-delete]');
@@ -340,7 +599,19 @@ document.addEventListener('click',e=>{
   const cancel=e.target.closest('[data-msg-cancel]');
   if(cancel){const id=cancel.dataset.msgCancel; const snapEl=document.querySelector(`[data-mid="${CSS.escape(id)}"]`); if(snapEl){db.ref(DB_ROOT+'/messages/'+id).get().then(s=>insertOrUpdate({id,...(s.val()||{})}));}return;}
 });
-function bindForm(){const form=$('chatForm'), btn=$('chatSend'); if(btn)btn.type='submit'; if(form&&!form.dataset.bound){form.dataset.bound='yes';form.setAttribute('action','javascript:void(0)');form.addEventListener('submit',e=>{e.preventDefault();e.stopPropagation();sendChat();return false});}}
+function bindForm(){
+  const form=$('chatForm'), btn=$('chatSend');
+  if(btn)btn.type='button';
+  if(form&&!form.dataset.bound){
+    form.dataset.bound='yes';
+    form.setAttribute('action','javascript:void(0)');
+    form.addEventListener('submit',e=>{e.preventDefault();e.stopPropagation();sendChat();return false});
+  }
+  if(btn&&!btn.dataset.bound){
+    btn.dataset.bound='yes';
+    btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();sendChat();return false});
+  }
+}
 async function start(){bindForm(); me=window.FGUser; await FGAuth.initFirebase(); db=FGAuth.db();
 const liveMeSnap = await db.ref('siteUsers/'+me.uid).get().catch(()=>null);
 if(liveMeSnap && liveMeSnap.exists()){ me={...me,...liveMeSnap.val()}; window.FGUser=me; }
@@ -355,7 +626,51 @@ $('commandsBtn')?.addEventListener('click',()=>$('commandsModal')?.classList.add
 $('closeCommands')?.addEventListener('click',()=>$('commandsModal')?.classList.remove('open'));
 $('commandsModal')?.addEventListener('click',e=>{if(e.target===$('commandsModal')) $('commandsModal').classList.remove('open')});
  db.ref('siteUsers').on('value',s=>{users=s.val()||{};document.dispatchEvent(new CustomEvent('fg-user-updated',{detail:window.FGUser}));renderMembers();}); db.ref('sitePresence').on('value',s=>{presence=s.val()||{};renderMembers();}); db.ref('siteCustomCommands').on('value',s=>{customCommands=s.val()||{};}); db.ref('siteChatSettings').on('value',s=>{chatSettings=s.val()||{};}); const box=$('messages'); loaded=false; if(box)box.innerHTML='<div class="empty">No messages yet.</div>'; db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_added',snap=>{if($('messages')?.querySelector('.empty')) $('messages').innerHTML=''; loaded=true; insertOrUpdate({id:snap.key,...snap.val()});}); db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_changed',snap=>insertOrUpdate({id:snap.key,...snap.val()})); db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_removed',snap=>{const el=document.querySelector(`[data-mid="${CSS.escape(snap.key)}"]`); if(el)el.remove();});}
-document.addEventListener('fg-auth-ready',start,{once:true});
+document.addEventListener('fg-auth-ready',()=>start().catch(err=>{console.error(err);const box=$('messages');if(box)box.innerHTML='<div class="empty">Chat failed to load: '+esc(err.message||err)+'</div>';}),{once:true});
 setTimeout(bindForm,400);setTimeout(bindForm,1200);
 })();
-</script></body></html>
+</script>
+<script>
+(function(){
+  let currentReport=null, reportDb=null;
+  function escReport(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+  async function getReportDb(){if(reportDb)return reportDb;await FGAuth.initFirebase();reportDb=FGAuth.db();return reportDb;}
+  window.openReportModal=function(data){
+    currentReport=data||{};
+    const modal=document.getElementById('reportModal');
+    const text=document.getElementById('reportTargetText');
+    const status=document.getElementById('reportStatus');
+    if(text)text.textContent='Reporting '+(currentReport.targetName||currentReport.targetUsername||currentReport.targetUid||currentReport.targetId||currentReport.type||'item');
+    if(status)status.textContent='';
+    if(document.getElementById('reportDescription'))reportDescription.value='';
+    modal?.classList.add('open');
+  };
+  async function submitReport(){
+    if(!currentReport)return;
+    const db=await getReportDb();
+    const me=window.FGUser||{};
+    const payload={
+      ...currentReport,
+      reason:document.getElementById('reportReason')?.value||'other',
+      description:(document.getElementById('reportDescription')?.value||'').trim(),
+      status:'open',
+      reporterUid:me.uid||'',
+      reporterUsername:me.username||'',
+      reporterName:me.name||me.username||'',
+      by:me.uid||'',
+      byName:me.name||me.username||'',
+      createdAt:Date.now()
+    };
+    await db.ref('siteReports').push(payload);
+    if(document.getElementById('reportStatus'))reportStatus.textContent='Report sent.';
+    setTimeout(()=>document.getElementById('reportModal')?.classList.remove('open'),600);
+  }
+  document.addEventListener('click',e=>{
+    if(e.target?.id==='cancelReport')document.getElementById('reportModal')?.classList.remove('open');
+    if(e.target?.id==='submitReport')submitReport();
+    if(e.target===document.getElementById('reportModal'))document.getElementById('reportModal')?.classList.remove('open');
+  });
+})();
+
+</script>
+</body></html>

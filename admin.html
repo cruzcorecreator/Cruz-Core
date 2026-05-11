@@ -1,62 +1,223 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#050916"><meta name="robots" content="noindex,nofollow"><title>GameHub — Admin</title><link rel="stylesheet" href="ui.css"></head><body>
-<section><div class="section-head"><div><h1 class="page-title">Admin Panel</h1><p class="muted">User control center, announcements, DMs, and game tools.</p></div><span class="rank" id="adminRank">checking...</span></div><div class="admin-layout"><aside class="card card-pad admin-users"><div class="section-head"><h2>Users</h2><button class="btn primary" id="openAddAccount" type="button">Add Account</button></div><input class="search" id="userSearch" placeholder="Search users..."><div class="list" id="usersList" style="margin-top:14px"><div class="empty">loading users...</div></div></aside><main class="grid"><section class="card card-pad admin-detail"><h2>Selected User</h2><div id="selectedUser"><p class="muted">Pick a user to edit.</p></div></section><section class="admin-tools"><div class="card card-pad"><h2>Site-wide Announcement</h2><div class="field"><label>Notification text</label><textarea id="announceText" maxlength="220"></textarea></div><button class="btn primary" id="sendAnnounce" type="button">Send 6-second notification</button></div><div class="card card-pad"><h2>DM Viewer</h2><div class="list" id="dmViewer"><p class="muted">Select a user to see conversations.</p></div></div><div class="card card-pad"><h2>User Notes</h2><div class="list" id="notesViewer"><p class="muted">Select a user to see notes.</p></div></div>
-<div class="card card-pad"><h2>Game Tools</h2>
-  <p class="muted" id="gamePermText">Only owner/tester can add or edit games.</p>
-  <div id="gameEditor">
-    <div class="field"><label>Pick Existing Game</label><select id="gameSelect" class="search"><option value="">New game...</option></select></div>
-    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
-      <div class="field"><label>Game ID</label><input id="gameId" placeholder="geometry-dash"></div>
-      <div class="field"><label>Title</label><input id="gameTitle"></div>
-      <div class="field"><label>Embed / Launch URL</label><input id="gameUrl"></div>
-      <div class="field"><label>Source URL</label><input id="gameSourceUrl"></div>
-      <div class="field"><label>Thumbnail URL</label><input id="gameThumb"></div>
-      <div class="field"><label>Tag</label><input id="gameTag" placeholder="game"></div>
-      <div class="field"><label>Type</label><select id="gameType" class="search"><option value="game">game</option><option value="app">app</option></select></div>
-      <div class="field"><label>Open Mode</label><select id="gameOpenMode" class="search"><option value="embed">embed in game.html</option><option value="redirect">redirect directly</option></select></div>
-      <div class="field"><label>Locked?</label><select id="gameLocked" class="search"><option value="false">unlocked</option><option value="true">locked</option></select></div>
-      <div class="field"><label>Hidden?</label><select id="gameHidden" class="search"><option value="false">visible</option><option value="true">hidden</option></select></div>
-      <div class="field"><label>Page</label><input id="gamePage" type="number" min="1" value="1"></div>
-      <div class="field"><label>Order</label><input id="gameOrder" type="number" min="1" value="1"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#050916"><meta name="robots" content="noindex,nofollow"><title>GameHub — Admin Control Center</title><link rel="stylesheet" href="ui.css"></head><body>
+<section class="admin-center">
+  <aside class="admin-nav card card-pad">
+    <div class="admin-brand">
+      <div class="logo">🛡️</div>
+      <div><b>Admin</b><span>Control Center</span></div>
     </div>
-    <div class="field"><label>Description</label><textarea id="gameDesc"></textarea></div>
-    <div class="button-row">
-      <button class="btn primary" id="saveGame" type="button">Save Game</button>
-      <button class="btn" id="newGame" type="button">New Blank</button>
-      <button class="btn" id="lockGame" type="button">Lock</button>
-      <button class="btn" id="unlockGame" type="button">Unlock</button>
-      <button class="btn danger" id="deleteGame" type="button">Delete</button>
-    </div>
-    <p class="muted" id="gameStatus">Loading games...</p>
-    <div class="list" id="gamesAdminList"><p class="muted">loading...</p></div>
-  </div>
-</div>
+    <a href="admin.html?id=dashboard" class="admin-tab active">📊 Dashboard</a>
+    <a href="admin.html?id=users" class="admin-tab">👥 Users</a>
+    <a href="admin.html?id=reports" class="admin-tab">🚩 Reports</a>
+    <a href="admin.html?id=analytics" class="admin-tab">📈 Analytics</a>
+    <a href="admin.html?id=games" class="admin-tab">🎮 Games</a>
+    <a href="admin.html?id=chat" class="admin-tab">💬 Chat</a>
+    <a href="admin.html?id=announcements" class="admin-tab">📢 News / Announcements</a>
+    <a href="admin.html?id=logs" class="admin-tab">📜 Logs</a>
+    <a href="admin.html?id=devtools" class="admin-tab">⚙️ Dev Tools</a>
+  </aside>
 
-<div class="card card-pad">
-  <h2>Custom Troll Command Builder</h2>
-  <p class="muted">Creates staff-only commands like <strong>/rickroll username</strong>. Stored in Firebase, not hardcoded.</p>
-  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
-    <div class="field"><label>Command Name</label><input id="cmdName" placeholder="rickroll"></div>
-    <div class="field"><label>Emoji Shown</label><input id="cmdEmoji" placeholder="🎵"></div>
-    <div class="field"><label>Text Shown</label><input id="cmdText" placeholder="Never gonna give you up!"></div>
-    <div class="field"><label>Duration ms</label><input id="cmdDuration" type="number" value="2400"></div>
-    <div class="field"><label>Shake Page?</label><select id="cmdShake" class="search"><option value="false">no</option><option value="true">yes</option></select></div>
-    <div class="field"><label>Redirect?</label><select id="cmdRedirect" class="search"><option value="false">no</option><option value="true">yes</option></select></div>
-    <div class="field"><label>Redirect URL</label><input id="cmdRedirectUrl" placeholder="https://example.com"></div>
-    <div class="field"><label>Play Sound?</label><input id="cmdSoundUrl" placeholder="sound URL"></div>
-    <div class="field"><label>Image Instead</label><input id="cmdImageUrl" placeholder="image URL"></div>
-  </div>
-  <div class="button-row">
-    <button class="btn primary" id="saveCustomCommand" type="button">Save Command</button>
-    <button class="btn danger" id="deleteCustomCommand" type="button">Delete Command</button>
-  </div>
-  <p class="muted" id="cmdStatus">Example use after saving: /rickroll username</p>
-  <div class="list" id="customCommandsList"><p class="muted">loading commands...</p></div>
-</div>
-</section></main></div></section>
-<div class="modal-lite" id="addModal"><div class="modal-box"><h2 style="margin-top:0">Add Account</h2><div class="field"><label>Username</label><input id="newUsername"></div><div class="field"><label>Display Name</label><input id="newName"></div><div class="field"><label>Password</label><input id="newPass" type="password"></div><div class="field"><label>Rank</label><select id="newRank" class="search"><option>member</option><option>helper</option><option>mod</option><option>admin</option><option>tester</option><option>owner</option><option>banned</option></select></div><div class="button-row"><button class="btn primary" id="createAccount" type="button">Create</button><button class="btn" id="closeAdd" type="button">Cancel</button></div><p class="muted" id="addStatus"></p></div></div>
+  <main class="admin-main">
+    <div class="section-head admin-top">
+      <div>
+        <h1 class="page-title">Admin Control Center</h1>
+        <p class="muted">Users, reports, analytics, logs, games, announcements, and moderation tools.</p>
+      </div>
+      <span class="rank" id="adminRank">checking...</span>
+    </div>
+
+    <section id="dashboardPanel" class="admin-section">
+      <div class="admin-metrics">
+        <div class="metric-card"><span>Total Users</span><b id="dashUsers">--</b></div>
+        <div class="metric-card"><span>Online Now</span><b id="dashOnline">--</b></div>
+        <div class="metric-card"><span>Games</span><b id="dashGames">--</b></div>
+        <div class="metric-card"><span>Reports Open</span><b id="dashReports">--</b></div>
+        <div class="metric-card"><span>Messages Today</span><b id="dashMessages">--</b></div>
+        <div class="metric-card"><span>Staff Accounts</span><b id="dashStaff">--</b></div>
+        <div class="metric-card"><span>Banned Users</span><b id="dashBanned">--</b></div>
+      </div>
+      <div class="admin-two">
+        <section class="card card-pad"><h2>Live Activity</h2><div class="list" id="liveActivity"><p class="muted">loading...</p></div></section>
+        <section class="card card-pad"><h2>Top Games</h2><div class="list" id="topGamesAnalytics"><p class="muted">loading...</p></div></section>
+      </div>
+    </section>
+
+    <section id="usersPanel" class="admin-section admin-user-grid">
+      <aside class="card card-pad admin-users" id="usersAdmin">
+        <div class="section-head"><h2>Users</h2><button class="btn primary" id="openAddAccount" type="button">Add Account</button></div>
+        <input class="search" id="userSearch" placeholder="Search users...">
+        <div class="list" id="usersList" style="margin-top:14px"><div class="empty">loading users...</div></div>
+      </aside>
+      <section class="card card-pad admin-detail">
+        <h2>Selected User</h2>
+        <div id="selectedUser"><p class="muted">Pick a user to edit.</p></div>
+      </section>
+      <section class="card card-pad">
+        <h2>DM Viewer</h2>
+        <div class="list" id="dmViewer"><p class="muted">Select a user to see conversations.</p></div>
+      </section>
+      <section class="card card-pad">
+        <h2>User Notes</h2>
+        <div class="list" id="notesViewer"><p class="muted">Select a user to see notes.</p></div>
+      </section>
+    </section>
+
+    <section id="reportsPanel" class="admin-section">
+      <div class="admin-two">
+        <section class="card card-pad">
+          <h2>Create Manual Report</h2>
+          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+            <div class="field"><label>Type</label><select id="newReportType" class="search"><option>user</option><option>message</option><option>game</option><option>profile</option><option>other</option></select></div>
+            <div class="field"><label>Reason</label><select id="newReportReason" class="search"><option>spam</option><option>harassment</option><option>nsfw</option><option>impersonation</option><option>exploit</option><option>bypass</option><option>other</option></select></div>
+          </div>
+          <div class="field"><label>Details / Evidence</label><textarea id="newReportDetails" placeholder="What happened? Add user/message/game info here."></textarea></div>
+          <button class="btn primary" onclick="createReportFromAdmin()" type="button">Create Report</button>
+        </section>
+        <section class="card card-pad">
+          <h2>Report Rules</h2>
+          <div class="list">
+            <div class="person"><span class="avatar">🚩</span><span><b>Open</b><span>Needs staff review.</span></span></div>
+            <div class="person"><span class="avatar">✅</span><span><b>Resolved</b><span>Staff handled it.</span></span></div>
+            <div class="person"><span class="avatar">📝</span><span><b>Evidence</b><span>Use details to link users/messages/games.</span></span></div>
+          </div>
+        </section>
+      </div>
+      <section class="card card-pad"><h2>Reports Queue</h2><div class="reports-list" id="reportsList"><p class="muted">loading reports...</p></div></section>
+    </section>
+
+    <section id="analyticsPanel" class="admin-section">
+      <div class="admin-two">
+        <section class="card card-pad"><h2>Game Analytics</h2><div class="admin-metrics mini" id="gameAnalytics"><p class="muted">loading...</p></div></section>
+        <section class="card card-pad"><h2>Chat Analytics</h2><div class="list" id="chatAnalytics"><p class="muted">loading...</p></div></section>
+      </div>
+      <section class="card card-pad"><h2>Analytics Ideas</h2><div class="list">
+        <div class="person"><span class="avatar">📈</span><span><b>Peak active users</b><span>Track the highest simultaneous online count.</span></span></div>
+        <div class="person"><span class="avatar">⏱️</span><span><b>Session time</b><span>Use presence timestamps to estimate active time.</span></span></div>
+        <div class="person"><span class="avatar">🔥</span><span><b>Trending games</b><span>Sort by recent play spikes.</span></span></div>
+      </div></section>
+    </section>
+
+    <section id="gamesPanel" class="admin-section">
+      <div class="card card-pad" id="gamesAdmin">
+        <h2>Game Tools</h2>
+        <p class="muted" id="gamePermText">Only owner/tester can add or edit games.</p>
+        <div id="gameEditor">
+          <div class="field"><label>Pick Existing Game</label><select id="gameSelect" class="search"><option value="">New game...</option></select></div>
+          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+            <div class="field"><label>Game ID</label><input id="gameId" placeholder="geometry-dash"></div>
+            <div class="field"><label>Title</label><input id="gameTitle"></div>
+            <div class="field"><label>Embed / Launch URL</label><input id="gameUrl"></div>
+            <div class="field"><label>Source URL</label><input id="gameSourceUrl"></div>
+            <div class="field"><label>Thumbnail URL</label><input id="gameThumb"></div>
+            <div class="field"><label>Tag</label><input id="gameTag" placeholder="game"></div>
+            <div class="field"><label>Type</label><select id="gameType" class="search"><option value="game">game</option><option value="app">app</option></select></div>
+            <div class="field"><label>Open Mode</label><select id="gameOpenMode" class="search"><option value="embed">embed in game.html</option><option value="redirect">redirect directly</option></select></div>
+            <div class="field"><label>Locked?</label><select id="gameLocked" class="search"><option value="false">unlocked</option><option value="true">locked</option></select></div>
+            <div class="field"><label>Hidden?</label><select id="gameHidden" class="search"><option value="false">visible</option><option value="true">hidden</option></select></div>
+            <div class="field"><label>Page</label><input id="gamePage" type="number" min="1" value="1"></div>
+            <div class="field"><label>Order</label><input id="gameOrder" type="number" min="1" value="1"></div>
+          </div>
+          <div class="field"><label>Description</label><textarea id="gameDesc"></textarea></div>
+          <div class="button-row">
+            <button class="btn primary" id="saveGame" type="button">Save Game</button>
+            <button class="btn" id="newGame" type="button">New Blank</button>
+            <button class="btn" id="lockGame" type="button">Lock</button>
+            <button class="btn" id="unlockGame" type="button">Unlock</button>
+            <button class="btn danger" id="deleteGame" type="button">Delete</button>
+          </div>
+          <p class="muted" id="gameStatus">Loading games...</p>
+          <div class="list" id="gamesAdminList"><p class="muted">loading...</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="chatPanel" class="admin-section">
+      <section class="card card-pad"><h2>Chat Moderation</h2><div class="list">
+        <div class="person"><span class="avatar">🐢</span><span><b>Slowmode</b><span>Use /slowmode seconds in chat commands.</span></span></div>
+        <div class="person"><span class="avatar">🔒</span><span><b>Lock chat</b><span>Use /lockchat and /unlockchat.</span></span></div>
+        <div class="person"><span class="avatar">🧹</span><span><b>Clear chat</b><span>Use /clear amount or /purge user amount.</span></span></div>
+      </div></section>
+    </section>
+
+    <section id="announcementsPanel" class="admin-section">
+      <div class="card card-pad" id="announcementsAdmin">
+        <h2>Site-wide Announcement</h2>
+        <div class="field"><label>Notification text</label><textarea id="announceText" maxlength="220"></textarea></div>
+        <button class="btn primary" id="sendAnnounce" type="button">Send 6-second notification</button>
+      </div>
+    </section>
+
+    <section id="logsPanel" class="admin-section">
+      <section class="card card-pad"><h2>Admin Logs</h2><div class="logs-list" id="adminLogsList"><p class="muted">loading logs...</p></div></section>
+    </section>
+
+    <section id="devPanel" class="admin-section">
+      <div class="card card-pad">
+        <h2>Custom Troll Command Builder</h2>
+        <p class="muted">Creates staff-only commands like <strong>/rickroll username</strong>. Stored in Firebase, not hardcoded.</p>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+          <div class="field"><label>Command Name</label><input id="cmdName" placeholder="rickroll"></div>
+          <div class="field"><label>Emoji Shown</label><input id="cmdEmoji" placeholder="🎵"></div>
+          <div class="field"><label>Text Shown</label><input id="cmdText" placeholder="Never gonna give you up!"></div>
+          <div class="field"><label>Duration ms</label><input id="cmdDuration" type="number" value="2400"></div>
+          <div class="field"><label>Shake Page?</label><select id="cmdShake" class="search"><option value="false">no</option><option value="true">yes</option></select></div>
+          <div class="field"><label>Redirect?</label><select id="cmdRedirect" class="search"><option value="false">no</option><option value="true">yes</option></select></div>
+          <div class="field"><label>Redirect URL</label><input id="cmdRedirectUrl" placeholder="https://example.com"></div>
+          <div class="field"><label>Play Sound?</label><input id="cmdSoundUrl" placeholder="sound URL"></div>
+          <div class="field"><label>Image Instead</label><input id="cmdImageUrl" placeholder="image URL"></div>
+        </div>
+        <div class="button-row">
+          <button class="btn primary" id="saveCustomCommand" type="button">Save Command</button>
+          <button class="btn danger" id="deleteCustomCommand" type="button">Delete Command</button>
+        </div>
+        <p class="muted" id="cmdStatus">Example use after saving: /rickroll username</p>
+        <div class="list" id="customCommandsList"><p class="muted">loading commands...</p></div>
+      </div>
+    </section>
+  </main>
+</section>
+
+<div class="modal-lite" id="addModal"><div class="modal-box"><h2 style="margin-top:0">Add Account</h2><div class="field"><label>Username</label><input id="newUsername"></div><div class="field"><label>Display Name</label><input id="newName"></div><div class="field"><label>Password</label><input id="newPass" type="password"></div><div class="field"><label>Rank</label><select id="newRank" class="search"><option>member</option><option>bot</option><option>helper</option><option>mod</option><option>admin</option><option>tester</option><option>owner</option><option>banned</option></select></div><div class="button-row"><button class="btn primary" id="createAccount" type="button">Create</button><button class="btn" id="closeAdd" type="button">Cancel</button></div><p class="muted" id="addStatus"></p></div></div>
 <script src="login-guard.js"></script><script src="shell.js"></script><script>
-const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));let db,me,users={},presence={},selected=null;const power=r=>({banned:-1,member:0,helper:1,mod:2,admin:3,tester:4,owner:5}[r]??0);function isCruzUser(u=me){return String(u?.username||'').toLowerCase()==='cruz'}const rankEmoji=r=>({owner:'👑',tester:'🧪',admin:'🛡️',mod:'🔨',helper:'✨',banned:'🚫',member:''}[r]||'');function photo(u){return (window.FGAuth?.pickPhoto?.(u))||u?.photoURL||u?.pfp||u?.pfpUrl||u?.profilePic||u?.profilePicture||u?.profileImage||u?.avatar||u?.avatarUrl||u?.picture||u?.photo||u?.image||u?.icon||''}function av(u){const img=photo(u);return img?`<span class="avatar"><img src="${esc(img)}" alt=""></span>`:`<span class="avatar">${esc((u?.name||u?.username||'U').slice(0,1).toUpperCase())}</span>`}function canEditRanks(){return isCruzUser()||power(me?.role)>=5}function canGame(){return isCruzUser()||['owner','tester'].includes(me?.role)}function protectedUser(u){return ['owner','tester'].includes(u?.role)}function canOverrideProtected(){return isCruzUser()}function cleanUser(s){return String(s||'').toLowerCase().trim().replace(/[^a-z0-9_.-]/g,'').slice(0,24)}function cleanName(s){return String(s||'').replace(/\s+/g,' ').trim().slice(0,24)}function renderUsers(){const q=(userSearch.value||'').toLowerCase();const arr=Object.values(users).filter(u=>u&&u.uid).filter(u=>[u.username,u.name,u.role,u.bio].join(' ').toLowerCase().includes(q)).sort((a,b)=>power(b.role)-power(a.role)||String(a.username).localeCompare(String(b.username)));usersList.innerHTML=arr.map(u=>{const p=presence[u.uid]||{},on=p.online&&Date.now()-Number(p.lastSeen||0)<90000;return `<button class="person ${selected===u.uid?'convo-active':''}" data-select="${esc(u.uid)}" type="button" style="width:100%;text-align:left;color:white">${av(u)}<span><b>${esc(u.name||u.username)} ${rankEmoji(u.role)} <span class="rank">${esc(u.role||'member')}</span></b><span>@${esc(u.username||'')} · ${on?'online · '+esc(p.currentPage||'active'):'offline'}</span></span><span class="status-dot" style="opacity:${on?1:.25}"></span></button>`}).join('')||'<div class="empty">No users found.</div>';if(selected)renderSelected()}function renderSelected(){const u=users[selected];if(!u){selectedUser.innerHTML='<p class="muted">Pick a user to edit.</p>';return}const rankOptions=['member','helper','mod','admin','tester','owner','banned'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('');selectedUser.innerHTML=`<div class="profile-hero" style="margin-bottom:14px">${av(u)}<div><h2 style="margin:0">${esc(u.name||u.username)} ${rankEmoji(u.role)}</h2><p class="muted">@${esc(u.username)} · ${esc(u.uid)}</p><span class="rank">${esc(u.role||'member')}</span></div></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px"><div class="field"><label>Username</label><input id="editUsername" value="${esc(u.username||'')}"></div><div class="field"><label>Display Name</label><input id="editName" value="${esc(u.name||'')}"></div><div class="field"><label>New Password</label><input id="editPass" type="password" placeholder="leave blank"></div><div class="field"><label>Rank</label><select id="editRank" class="search">${rankOptions}</select></div><div class="field"><label>Name Color</label><input id="editNameColor" value="${esc(u.nameColor||'')}" placeholder="#38bdf8 or red"></div><div class="field"><label>Level</label><input id="editLevel" type="number" min="0" value="${Number(u.level||0)}"></div><div class="field"><label>Custom Tag</label><input id="editCustomTag" maxlength="18" value="${esc(u.customTag||'')}" placeholder="LEGEND / VIP / STAFF"></div></div><div class="field"><label>Bio</label><textarea id="editBio">${esc(u.bio||'')}</textarea></div><div class="field"><label>Add Moderator Note</label><textarea id="newUserNote" placeholder="Private staff note about this user..."></textarea></div><div class="admin-actions"><button class="btn" data-act="saveNote" type="button">Add Note</button><button class="btn primary" data-act="saveUser" type="button">Save Changes</button><button class="btn" data-act="removePfp" type="button">Remove PFP</button><button class="btn" data-act="warn" type="button">Warn</button><button class="btn danger" data-act="banUser" type="button">Ban</button><button class="btn" data-act="unbanUser" type="button">Unban</button><button class="btn" data-act="timeout" type="button">Time-out</button><button class="btn" data-act="untimeout" type="button">Un-timeout</button><button class="btn" data-act="mute" type="button">Mute Chat</button><button class="btn" data-act="unmute" type="button">Unmute</button><button class="btn danger" data-act="deleteUser" type="button">Delete Account</button></div>${protectedUser(u)?'<p class="muted">Protected account: owner/tester cannot be banned, muted, timed out, or deleted.</p>':''}`;renderDMViewer();renderNotes()}async function usernameTaken(username,exceptUid){const clean=cleanUser(username);if(!clean)return true;return Object.values(users).some(u=>u.uid!==exceptUid&&String(u.username||'').toLowerCase()===clean)}async function saveUser(){const u=users[selected];if(!u)return;const username=cleanUser(editUsername.value);if(!username)return alert('Username required.');if(await usernameTaken(username,selected))return alert('That username is already taken.');const patch={username,name:cleanName(editName.value)||username,bio:editBio.value.trim().slice(0,260),nameColor:editNameColor.value.trim().slice(0,32),level:Number(editLevel.value||0),customTag:editCustomTag.value.trim().slice(0,18)};if(canEditRanks()){if(protectedUser(u)&&!canOverrideProtected()&&!['owner','tester'].includes(editRank.value))return alert('Owner/tester accounts are protected.');patch.role=editRank.value;patch.rank=editRank.value}else if(editRank.value!==u.role)alert('Only owner can change ranks.');if(patch.role==='banned'&&protectedUser(u)&&!canOverrideProtected())return alert('Owner/tester accounts cannot be banned.');if(editPass.value.trim())patch.passwordHash=await FGAuth.sha256(editPass.value.trim());await db.ref('siteUsers/'+selected).update(patch);await db.ref('siteUsernames/'+username).set(selected);alert('Saved.')}async function createNewAccount(){const username=cleanUser(newUsername.value),name=cleanName(newName.value)||username,pass=newPass.value,role=canEditRanks()?newRank.value:'member';if(!username||!pass){addStatus.textContent='Username and password required.';return}if(await usernameTaken(username,'')){addStatus.textContent='That username is already taken.';return}const uid='user-'+username;const user={uid,username,name,role,rank:role,passwordHash:await FGAuth.sha256(pass),bio:'',photoURL:'',recentGames:[],createdAt:Date.now(),createdBy:me.uid};await db.ref('siteUsers/'+uid).set(user);await db.ref('siteUsernames/'+username).set(uid);addStatus.textContent='Account created.';newUsername.value=newName.value=newPass.value='';setTimeout(()=>addModal.classList.remove('open'),600)}async function moderate(act){const u=users[selected];if(!u)return;if(protectedUser(u)&&!canOverrideProtected()&&['timeout','untimeout','mute','deleteUser','banUser','unbanUser'].includes(act))return alert('Owner/tester accounts are protected.');if(act==='removePfp')await db.ref('siteUsers/'+selected).update({photoURL:''});if(act==='banUser')await db.ref('siteUsers/'+selected).update({role:'banned',rank:'banned',banReason:'Banned from admin panel',bannedAt:Date.now()});if(act==='unbanUser')await db.ref('siteUsers/'+selected).update({role:'member',rank:'member',banReason:null,banUntil:null,bannedAt:null});if(act==='untimeout')await db.ref('siteUsers/'+selected).update({timeoutUntil:null});if(act==='warn')await db.ref('siteNotifications/'+selected).push({text:'Admin warning: please follow the rules.',createdAt:Date.now(),seen:false});if(act==='timeout')await db.ref('siteUsers/'+selected).update({timeoutUntil:Date.now()+15*60*1000});if(act==='mute')await db.ref('siteUsers/'+selected).update({mutedUntil:Date.now()+15*60*1000});if(act==='unmute')await db.ref('siteUsers/'+selected).update({mutedUntil:null,muteReason:null});if(act==='deleteUser'){if(confirm('Delete this account?')){await db.ref('siteUsers/'+selected).remove();if(u.username)await db.ref('siteUsernames/'+u.username).remove();selected=null;renderSelected()}}}function renderDMViewer(){if(!selected){dmViewer.innerHTML='<p class="muted">Select a user to see their DMs.</p>';return}db.ref('siteDMIndex/'+selected).once('value').then(s=>{const idx=s.val()||{};const arr=Object.entries(idx).sort((a,b)=>Number(b[1].lastAt||0)-Number(a[1].lastAt||0));dmViewer.innerHTML=arr.map(([cid,c])=>`<a class="person" href="messages.html?with=${encodeURIComponent(c.withUid||'')}"><span class="avatar">💬</span><span><b>${esc(c.fromName||c.fromUsername||c.withUid||'conversation')}</b><span>${esc(c.lastText||'')}</span></span></a>`).join('')||'<p class="muted">No DMs indexed for this user.</p>'})}
-function renderNotes(){if(!selected||!window.notesViewer){if(window.notesViewer)notesViewer.innerHTML='<p class="muted">Select a user to see notes.</p>';return}db.ref('siteUserNotes/'+selected).once('value').then(s=>{const notes=s.val()||{};const arr=Object.entries(notes).sort((a,b)=>Number(b[1].createdAt||0)-Number(a[1].createdAt||0));notesViewer.innerHTML=arr.map(([id,n])=>`<div class="person"><span class="avatar">📝</span><span><b>${esc(n.byName||n.by||'staff')}</b><span>${esc(n.text||'')}</span><span class="muted">${n.createdAt?new Date(n.createdAt).toLocaleString():''}</span></span></div>`).join('')||'<p class="muted">No notes for this user.</p>'})}document.addEventListener('fg-auth-ready',async()=>{me=window.FGUser;if(!isCruzUser(me)&&power(me.role)<3){document.body.innerHTML='<main style="padding:30px"><h1>Access denied</h1><p>You need admin rank or higher.</p></main>';return}adminRank.textContent=me.role;await FGAuth.initFirebase();db=FGAuth.db();gameEditor.style.display=canGame()?'block':'none';gamePermText.textContent=canGame()?'You can add/edit games.':'Admins can moderate accounts, but only owner/tester can add games.';db.ref('siteUsers').on('value',s=>{users=s.val()||{};renderUsers()});db.ref('sitePresence').on('value',s=>{presence=s.val()||{};renderUsers()});db.ref('siteCustomCommands').on('value',s=>{customCommands=s.val()||{};renderCustomCommands()});db.ref('homepageAdmin/games').on('value',s=>{gamesAdmin=s.val()||{};renderGamesAdmin()})});userSearch.addEventListener('input',renderUsers);usersList.addEventListener('click',e=>{const b=e.target.closest('[data-select]');if(b){selected=b.dataset.select;renderUsers();renderSelected()}});selectedUser.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b)return;if(b.dataset.act==='saveUser')saveUser();else if(b.dataset.act==='saveNote'){const text=(newUserNote?.value||'').trim();if(!selected||!text)return;await db.ref('siteUserNotes/'+selected).push({text:text.slice(0,500),by:me.uid,byName:me.username||me.name,createdAt:Date.now()});newUserNote.value='';renderNotes();}else moderate(b.dataset.act)});openAddAccount.onclick=()=>addModal.classList.add('open');closeAdd.onclick=()=>addModal.classList.remove('open');createAccount.onclick=createNewAccount;if(window.saveCustomCommand)saveCustomCommand.onclick=saveCommand;if(window.deleteCustomCommand)deleteCustomCommand.onclick=deleteCommand;if(window.customCommandsList)customCommandsList.addEventListener('click',e=>{const b=e.target.closest('[data-cmd]');if(b)fillCustomCommand(b.dataset.cmd)});
+const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));let db,me,users={},presence={},selected=null;Object.defineProperties(window,{db:{get:()=>db},me:{get:()=>me},users:{get:()=>users},presence:{get:()=>presence}});const power=r=>({banned:-1,member:0,bot:0,helper:1,mod:2,admin:3,tester:4,owner:5}[r]??0);function isCruzUser(u=me){return String(u?.username||'').toLowerCase()==='cruz'}const rankEmoji=r=>({owner:'👑',tester:'🧪',admin:'🛡️',mod:'🔨',helper:'✨',bot:'🤖',banned:'🚫',member:''}[r]||'');function photo(u){return (window.FGAuth?.pickPhoto?.(u))||u?.photoURL||u?.pfp||u?.pfpUrl||u?.profilePic||u?.profilePicture||u?.profileImage||u?.avatar||u?.avatarUrl||u?.picture||u?.photo||u?.image||u?.icon||''}function av(u){const img=photo(u);return img?`<span class="avatar"><img src="${esc(img)}" alt=""></span>`:`<span class="avatar">${esc((u?.name||u?.username||'U').slice(0,1).toUpperCase())}</span>`}function canEditRanks(){return isCruzUser()||power(me?.role)>=5}function canGame(){return isCruzUser()||['owner','tester'].includes(me?.role)}function protectedUser(u){return ['owner','tester'].includes(u?.role)}function canOverrideProtected(){return isCruzUser()}function cleanUser(s){return String(s||'').toLowerCase().trim().replace(/[^a-z0-9_.-]/g,'').slice(0,24)}function cleanName(s){return String(s||'').replace(/\s+/g,' ').trim().slice(0,24)}function renderUsers(){const q=(userSearch.value||'').toLowerCase();const arr=Object.values(users).filter(u=>u&&u.uid).filter(u=>[u.username,u.name,u.role,u.bio].join(' ').toLowerCase().includes(q)).sort((a,b)=>power(b.role)-power(a.role)||String(a.username).localeCompare(String(b.username)));usersList.innerHTML=arr.map(u=>{const p=presence[u.uid]||{},on=p.online&&Date.now()-Number(p.lastSeen||0)<90000;return `<button class="person ${selected===u.uid?'convo-active':''}" data-select="${esc(u.uid)}" type="button" style="width:100%;text-align:left;color:white">${av(u)}<span><b>${esc(u.name||u.username)} ${rankEmoji(u.role)} <span class="rank">${esc(u.role||'member')}</span></b><span>@${esc(u.username||'')} · ${on?'online · '+esc(p.currentPage||'active'):'offline'}</span></span><span class="status-dot" style="opacity:${on?1:.25}"></span></button>`}).join('')||'<div class="empty">No users found.</div>';if(selected)renderSelected()}function renderSelected(){const u=users[selected];if(!u){selectedUser.innerHTML='<p class="muted">Pick a user to edit.</p>';return}const rankOptions=['member','bot','helper','mod','admin','tester','owner','banned'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('');selectedUser.innerHTML=`<div class="profile-hero" style="margin-bottom:14px">${av(u)}<div><h2 style="margin:0">${esc(u.name||u.username)} ${rankEmoji(u.role)}</h2><p class="muted">@${esc(u.username)} · ${esc(u.uid)}</p><span class="rank">${esc(u.role||'member')}</span></div></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px"><div class="field"><label>Username</label><input id="editUsername" value="${esc(u.username||'')}"></div><div class="field"><label>Display Name</label><input id="editName" value="${esc(u.name||'')}"></div><div class="field"><label>New Password</label><input id="editPass" type="password" placeholder="leave blank"></div><div class="field"><label>Rank</label><select id="editRank" class="search">${rankOptions}</select></div><div class="field"><label>Name Color</label><input id="editNameColor" value="${esc(u.nameColor||'')}" placeholder="#38bdf8 or red"></div><div class="field"><label>Level</label><input id="editLevel" type="number" min="0" value="${Number(u.level||0)}"></div><div class="field"><label>Custom Tag</label><input id="editCustomTag" maxlength="18" value="${esc(u.customTag||'')}" placeholder="LEGEND / VIP / STAFF"></div></div><div class="field"><label>Bio</label><textarea id="editBio">${esc(u.bio||'')}</textarea></div><div class="field"><label>Add Moderator Note</label><textarea id="newUserNote" placeholder="Private staff note about this user..."></textarea></div><div class="admin-actions"><button class="btn" data-act="saveNote" type="button">Add Note</button><button class="btn primary" data-act="saveUser" type="button">Save Changes</button><button class="btn" data-act="removePfp" type="button">Remove PFP</button><button class="btn" data-act="warn" type="button">Warn</button><button class="btn danger" data-act="banUser" type="button">Ban</button><button class="btn" data-act="unbanUser" type="button">Unban</button><button class="btn" data-act="timeout" type="button">Time-out</button><button class="btn" data-act="untimeout" type="button">Un-timeout</button><button class="btn" data-act="forceLogout" type="button">Log Out User</button><button class="btn" data-act="mute" type="button">Mute Chat</button><button class="btn" data-act="unmute" type="button">Unmute</button><button class="btn danger" data-act="deleteUser" type="button">Delete Account</button></div>${protectedUser(u)?'<p class="muted">Protected account: owner/tester cannot be banned, muted, timed out, or deleted.</p>':''}`;renderDMViewer();renderNotes()}async function usernameTaken(username,exceptUid){const clean=cleanUser(username);if(!clean)return true;return Object.values(users).some(u=>u.uid!==exceptUid&&String(u.username||'').toLowerCase()===clean)}async function saveUser(){const u=users[selected];if(!u)return;const username=cleanUser(editUsername.value);if(!username)return alert('Username required.');if(await usernameTaken(username,selected))return alert('That username is already taken.');const patch={username,name:cleanName(editName.value)||username,bio:editBio.value.trim().slice(0,260),nameColor:editNameColor.value.trim().slice(0,32),level:Number(editLevel.value||0),customTag:editCustomTag.value.trim().slice(0,18)};if(canEditRanks()){if(protectedUser(u)&&!canOverrideProtected()&&!['owner','tester'].includes(editRank.value))return alert('Owner/tester accounts are protected.');patch.role=editRank.value;patch.rank=editRank.value}else if(editRank.value!==u.role)alert('Only owner can change ranks.');if(patch.role==='banned'&&protectedUser(u)&&!canOverrideProtected())return alert('Owner/tester accounts cannot be banned.');if(editPass.value.trim())patch.passwordHash=await FGAuth.sha256(editPass.value.trim());await db.ref('siteUsers/'+selected).update(patch);await db.ref('siteUsernames/'+username).set(selected);alert('Saved.')}async function createNewAccount(){const username=cleanUser(newUsername.value),name=cleanName(newName.value)||username,pass=newPass.value,role=canEditRanks()?newRank.value:'member';if(!username||!pass){addStatus.textContent='Username and password required.';return}if(await usernameTaken(username,'')){addStatus.textContent='That username is already taken.';return}const uid='user-'+username;const user={uid,username,name,role,rank:role,passwordHash:await FGAuth.sha256(pass),bio:'',photoURL:'',recentGames:[],createdAt:Date.now(),createdBy:me.uid};await db.ref('siteUsers/'+uid).set(user);await db.ref('siteUsernames/'+username).set(uid);addStatus.textContent='Account created.';newUsername.value=newName.value=newPass.value='';setTimeout(()=>addModal.classList.remove('open'),600)}async function moderate(act){const u=users[selected];if(!u)return;if(protectedUser(u)&&!canOverrideProtected()&&['timeout','untimeout','mute','deleteUser','banUser','unbanUser'].includes(act))return alert('Owner/tester accounts are protected.');if(act==='removePfp')await db.ref('siteUsers/'+selected).update({photoURL:''});if(act==='banUser'){
+  const title=prompt('Ban page title','Account Banned');
+  if(title===null)return;
+  const description=prompt('Ban page description','You may not use GameHub right now.');
+  if(description===null)return;
+  const reason=prompt('Ban reason','Banned from admin panel');
+  if(reason===null)return;
+  await db.ref('siteUsers/'+selected).update({role:'banned',rank:'banned',banTitle:title,banDescription:description,banReason:reason,bannedAt:Date.now()});
+  await db.ref('siteLogs/staff').push({action:'banUser',target:selected,details:reason,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+}if(act==='unbanUser')await db.ref('siteUsers/'+selected).update({role:'member',rank:'member',banReason:null,banUntil:null,bannedAt:null});if(act==='untimeout')await db.ref('siteUsers/'+selected).update({timeoutUntil:null});if(act==='warn'){
+  const reason=prompt('Warn reason?','Please follow the rules.');
+  if(reason===null)return;
+  const text=(reason||'Please follow the rules.').trim();
+  await db.ref('siteNotifications/'+selected).push({text:'Admin warning: '+text,createdAt:Date.now(),seen:false,type:'warning'});
+  await db.ref('siteWarnings/'+selected).push({reason:text,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+  await db.ref('siteLogs/staff').push({action:'warnUser',target:selected,details:text,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+}if(act==='timeout'){
+  const raw=prompt('How long should this user be timed out? Examples: 10m, 1h, 2d','15m');
+  if(raw===null)return;
+  const m=String(raw).trim().match(/^(\d+)\s*(m|min|mins|minute|minutes|h|hr|hour|hours|d|day|days)?$/i);
+  if(!m)return alert('Invalid time. Use examples like 10m, 1h, or 2d.');
+  const num=Number(m[1]);
+  const unit=(m[2]||'m').toLowerCase();
+  const mult=unit.startsWith('h')?60*60*1000:unit.startsWith('d')?24*60*60*1000:60*1000;
+  const reason=prompt('Timeout reason?','Timed out by admin panel.');
+  if(reason===null)return;
+  await db.ref('siteUsers/'+selected).update({timeoutUntil:Date.now()+num*mult,timeoutReason:reason});
+  await db.ref('siteLogs/staff').push({action:'timeoutUser',target:selected,details:num+' '+unit+' · '+reason,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+}if(act==='mute')await db.ref('siteUsers/'+selected).update({mutedUntil:Date.now()+15*60*1000});if(act==='unmute')await db.ref('siteUsers/'+selected).update({mutedUntil:null,muteReason:null});
+if(act==='forceLogout'){
+  if(!confirm('Force this user to log out on their next live update?'))return;
+  await db.ref('siteUsers/'+selected).update({sessionRevokedAt:Date.now()});
+  await db.ref('siteNotifications/'+selected).push({text:'You were logged out by staff.',createdAt:Date.now(),seen:false});
+  await db.ref('siteLogs/staff').push({action:'forceLogoutUser',target:selected,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+}if(act==='deleteUser'){if(confirm('Delete this account?')){await db.ref('siteUsers/'+selected).remove();if(u.username)await db.ref('siteUsernames/'+u.username).remove();selected=null;renderSelected()}}}function renderDMViewer(){
+  if(!selected){dmViewer.innerHTML='<p class="muted">Select a user to see their DMs.</p>';return}
+  const u=users[selected]||{};
+  dmViewer.innerHTML=`<div class="person" style="width:100%;color:white"><span class="avatar">💬</span><span><b>${esc(u.name||u.username||selected)}</b><span>Open the full read-only DM viewer for this user.</span><span class="button-row" style="margin-top:8px"><a class="btn primary" href="conversationviewer.html?uid=${encodeURIComponent(selected)}">View DMs</a></span></span></div>`;
+}
+function renderNotes(){if(!selected||!window.notesViewer){if(window.notesViewer)notesViewer.innerHTML='<p class="muted">Select a user to see notes.</p>';return}db.ref('siteUserNotes/'+selected).once('value').then(s=>{const notes=s.val()||{};const arr=Object.entries(notes).sort((a,b)=>Number(b[1].createdAt||0)-Number(a[1].createdAt||0));notesViewer.innerHTML=arr.map(([id,n])=>`<div class="person"><span class="avatar">📝</span><span><b>${esc(n.byName||n.by||'staff')}</b><span>${esc(n.text||'')}</span><span class="muted">${n.createdAt?new Date(n.createdAt).toLocaleString():''}</span></span></div>`).join('')||'<p class="muted">No notes for this user.</p>'})}document.addEventListener('fg-auth-ready',async()=>{me=window.FGUser;if(!isCruzUser(me)&&power(me.role)<3){document.body.innerHTML='<main style="padding:30px"><h1>Access denied</h1><p>You need admin rank or higher.</p></main>';return}adminRank.textContent=me.role;await FGAuth.initFirebase();db=FGAuth.db();gameEditor.style.display=canGame()?'block':'none';gamePermText.textContent=canGame()?'You can add/edit games.':'Admins can moderate accounts, but only owner/tester can add games.';db.ref('siteUsers').on('value',s=>{users=s.val()||{};renderUsers()});db.ref('sitePresence').on('value',s=>{presence=s.val()||{};renderUsers()});db.ref('siteCustomCommands').on('value',s=>{customCommands=s.val()||{};renderCustomCommands()});db.ref('homepageAdmin/games').on('value',s=>{gamesAdmin=s.val()||{};renderGamesAdmin()})});userSearch.addEventListener('input',renderUsers);usersList.addEventListener('click',e=>{const b=e.target.closest('[data-select]');if(b){selected=b.dataset.select;adminActiveDM=null;renderUsers();renderSelected()}});selectedUser.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b)return;if(b.dataset.act==='saveUser')saveUser();else if(b.dataset.act==='saveNote'){const text=(newUserNote?.value||'').trim();if(!selected||!text)return;await db.ref('siteUserNotes/'+selected).push({text:text.slice(0,500),by:me.uid,byName:me.username||me.name,createdAt:Date.now()});newUserNote.value='';renderNotes();}else moderate(b.dataset.act)});openAddAccount.onclick=()=>addModal.classList.add('open');closeAdd.onclick=()=>addModal.classList.remove('open');createAccount.onclick=createNewAccount;if(window.saveCustomCommand)saveCustomCommand.onclick=saveCommand;if(window.deleteCustomCommand)deleteCustomCommand.onclick=deleteCommand;if(window.customCommandsList)customCommandsList.addEventListener('click',e=>{const b=e.target.closest('[data-cmd]');if(b)fillCustomCommand(b.dataset.cmd)});
 let customCommands={};
 function cleanCmdName(s){return String(s||'').toLowerCase().trim().replace(/^\//,'').replace(/[^a-z0-9_-]/g,'').slice(0,24)}
 function renderCustomCommands(){
@@ -183,4 +344,174 @@ if(window.deleteGame)deleteGame.onclick=deleteGameRecord;
 if(window.gameSelect)gameSelect.onchange=()=>fillGameForm(gamesAdmin[gameSelect.value]||{});
 if(window.gamesAdminList)gamesAdminList.addEventListener('click',e=>{const b=e.target.closest('[data-game]');if(!b)return;gameSelect.value=b.dataset.game;fillGameForm(gamesAdmin[b.dataset.game]||{});});
 
-</script></body></html>
+</script>
+<script>
+(function(){
+  function esc2(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+  const $=id=>document.getElementById(id);
+  const shortTime=t=>t?new Date(t).toLocaleString():'unknown';
+
+  function setStat(id,val){const el=$(id);if(el)el.textContent=val}
+
+  function renderAdminDashboard(){
+    if(!window.db)return;
+    const allUsers=Object.values(window.users||{}).filter(u=>u&&u.uid);
+    const online=Object.values(window.presence||{}).filter(p=>p&&p.online&&Date.now()-Number(p.lastSeen||0)<90000);
+    setStat('dashUsers',allUsers.length);
+    setStat('dashOnline',online.length);
+    setStat('dashBanned',allUsers.filter(u=>(u.role||u.rank)==='banned').length);
+    setStat('dashStaff',allUsers.filter(u=>['helper','mod','admin','tester','owner'].includes(u.role||u.rank)).length);
+    const live=$('liveActivity');
+    if(live){
+      live.innerHTML=online.slice(0,10).map(p=>{
+        const u=(window.users||{})[p.uid]||{};
+        return `<div class="person"><span class="avatar">🟢</span><span><b>${esc2(u.name||u.username||p.uid||'user')}</b><span>${esc2(p.currentPage||'active')} · ${shortTime(p.lastSeen)}</span></span></div>`;
+      }).join('')||'<p class="muted">No one online right now.</p>';
+    }
+  }
+
+  function listenAnalytics(){
+    if(!window.db||window.__adminAnalyticsOn)return;
+    window.__adminAnalyticsOn=true;
+
+    db.ref('homepageAdmin/games').on('value',s=>{
+      const games=s.val()||{};
+      const arr=Object.values(games).filter(g=>g&&g.id);
+      setStat('dashGames',arr.length);
+      const hidden=arr.filter(g=>g.hidden).length, locked=arr.filter(g=>g.locked).length;
+      const gp=$('gameAnalytics');
+      if(gp)gp.innerHTML=`<div class="metric-card"><span>Games</span><b>${arr.length}</b></div><div class="metric-card"><span>Locked</span><b>${locked}</b></div><div class="metric-card"><span>Hidden</span><b>${hidden}</b></div>`;
+    });
+
+    db.ref('homepageAdmin/stats').on('value',s=>{
+      const stats=s.val()||{};
+      const top=Object.entries(stats).sort((a,b)=>Number(b[1]?.plays||0)-Number(a[1]?.plays||0)).slice(0,8);
+      const el=$('topGamesAnalytics');
+      if(el)el.innerHTML=top.map(([id,v])=>`<div class="person"><span class="avatar">🎮</span><span><b>${esc2(id)}</b><span>${Number(v.plays||0).toLocaleString()} plays</span></span></div>`).join('')||'<p class="muted">No game stats yet.</p>';
+    });
+
+    db.ref('chatbox/messages').limitToLast(250).on('value',s=>{
+      const msgs=[];s.forEach(c=>msgs.push({id:c.key,...(c.val()||{})}));
+      const today=Date.now()-86400000;
+      setStat('dashMessages',msgs.filter(m=>Number(m.createdAt||0)>today).length);
+      const chat=$('chatAnalytics');
+      if(chat){
+        const by={};msgs.forEach(m=>{by[m.uid]=(by[m.uid]||0)+1});
+        const top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,6);
+        chat.innerHTML=top.map(([uid,count])=>{
+          const u=(window.users||{})[uid]||{};
+          return `<div class="person"><span class="avatar">💬</span><span><b>${esc2(u.name||u.username||uid)}</b><span>${count} recent messages</span></span></div>`;
+        }).join('')||'<p class="muted">No chat activity.</p>';
+      }
+    });
+
+    db.ref('siteReports').on('value',s=>{
+      const reports=s.val()||{}; window.__adminReports=reports;
+      const arr=Object.entries(reports).map(([id,r])=>({id,...r})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
+      const open=arr.filter(r=>(r.status||'open')==='open');
+      setStat('dashReports',open.length);
+      const el=$('reportsList');
+      if(el)el.innerHTML=arr.map(r=>`<div class="report-card ${r.status==='resolved'?'resolved':''}">
+        <div><b>${esc2(r.type||'report')} · ${esc2(r.reason||'no reason')}</b>
+        <p class="muted">${esc2(r.description||r.details||'No description')}<br>
+        Reporter: ${esc2(r.reporterName||r.byName||r.by||'unknown')} ${r.reporterUid?'(@'+esc2(r.reporterUsername||'')+' / '+esc2(r.reporterUid)+')':''}<br>
+        Reported: ${esc2(r.targetName||r.targetUsername||r.targetUid||r.targetId||'unknown')} ${r.targetUid?'('+esc2(r.targetUid)+')':''}<br>
+        Context: ${esc2(r.context||r.messageText||r.gameTitle||'')}<br>
+        ${shortTime(r.createdAt)}</p></div>
+        <div class="button-row"><button class="btn" data-report-open="${esc2(r.id)}">Open Details</button><button class="btn" data-report-view="${esc2(r.id)}" data-report-type="${esc2(r.type||'')}" data-report-target="${esc2(r.targetUid||r.targetId||'')}" data-report-message="${esc2(r.messageId||r.targetId||'')}">View Reported Message/User</button><button class="btn primary" data-report-resolve="${esc2(r.id)}">Resolve</button><button class="btn danger" data-report-delete="${esc2(r.id)}">Delete</button></div>
+      </div>`).join('')||'<p class="muted">No reports yet.</p>';
+    });
+
+    db.ref('siteLogs/staff').limitToLast(120).on('value',s=>{
+      const logs=[];s.forEach(c=>logs.push({id:c.key,...(c.val()||{})}));
+      logs.reverse();
+      const el=$('adminLogsList');
+      if(el)el.innerHTML=logs.map(l=>`<div class="log-row"><span class="log-time">${shortTime(l.createdAt)}</span><b>${esc2(l.action||'action')}</b><span>${esc2(l.byName||l.by||'staff')} ${l.target?'→ '+esc2(l.target):''}</span><p>${esc2(l.details||'')}</p></div>`).join('')||'<p class="muted">No staff logs yet.</p>';
+    });
+  }
+
+  document.addEventListener('fg-auth-ready',()=>{
+    setTimeout(()=>{renderAdminDashboard();listenAnalytics();},900);
+    setInterval(renderAdminDashboard,4000);
+  });
+
+  async function showReportedMessage(r){
+    const target=(r.targetUid||r.targetName||r.targetId||'unknown');
+    const msg=(r.messageText||r.context||r.description||'No message text saved on report.');
+    let extra='';
+    if(r.type==='dm'&&r.context){
+      extra='\\n\\nDM reports save the message text on the report. Use Admin > Users > DM Viewer to inspect the full two-person conversation.';
+    }
+    alert('Reported '+(r.type||'item')+'\\nReported user/item: '+target+'\\n\\nMessage/Evidence:\\n'+msg+extra);
+  }
+
+  document.addEventListener('click',async e=>{
+    const resolve=e.target.closest('[data-report-resolve]');
+    const del=e.target.closest('[data-report-delete]');
+    const open=e.target.closest('[data-report-open]');
+    if(open){const r=(window.__adminReports||{})[open.dataset.reportOpen]||{};alert('Report ID: '+open.dataset.reportOpen+'\nType: '+(r.type||'')+'\nReason: '+(r.reason||'')+'\nReporter: '+(r.reporterName||r.byName||r.by||'')+'\nReported: '+(r.targetName||r.targetUsername||r.targetUid||r.targetId||'')+'\nDescription: '+(r.description||r.details||'')+'\nMessage: '+(r.messageText||''));return}
+    const view=e.target.closest('[data-report-view]');
+    if(view){const r=(window.__adminReports||{})[view.dataset.reportView]||{}; if(['user','profile'].includes(String(r.type||'').toLowerCase())){location.href='viewprofile.html?id='+encodeURIComponent(r.targetUid||r.targetId||'');return} if(String(r.type||'').toLowerCase()==='dm'){
+      const a=r.targetUid||r.from||'';
+      const b=r.reporterUid||r.by||'';
+      if(a&&b){location.href='conversationviewer.html?uid='+encodeURIComponent(a)+'&with='+encodeURIComponent(b);return}
+      showReportedMessage(r);return
+    }
+    if(String(r.type||'').toLowerCase()==='message'){showReportedMessage(r);return} alert('No direct viewer for this report type.'); return}
+    if(resolve&&window.db){
+      const reportId=resolve.dataset.reportResolve;
+      const r=(window.__adminReports||{})[reportId]||{};
+      const title=prompt('Resolved notification title','Report Resolved');
+      if(title===null)return;
+      const description=prompt('Resolved notification description','Thanks for reporting. Staff reviewed it and resolved the report.');
+      if(description===null)return;
+      const resolutionNote=prompt('Internal resolution note','Handled by staff.');
+      if(resolutionNote===null)return;
+      await db.ref('siteReports/'+reportId).update({status:'resolved',resolvedBy:window.me?.uid||'',resolvedByName:window.me?.username||window.me?.name||'',resolvedAt:Date.now(),resolutionTitle:title,resolutionDescription:description,resolutionNote});
+      const notifyUid=r.reporterUid||r.by||'';
+      if(notifyUid){
+        await db.ref('siteNotifications/'+notifyUid).push({type:'reportResolved',title,description,reason:resolutionNote,text:description,reportId,createdAt:Date.now(),seen:false});
+      }
+      await db.ref('siteLogs/staff').push({action:'resolveReport',target:reportId,details:resolutionNote,by:window.me?.uid||'',byName:window.me?.username||window.me?.name||'',createdAt:Date.now()});
+    }
+    if(del&&window.db&&confirm('Delete this report?')){
+      await db.ref('siteReports/'+del.dataset.reportDelete).remove();
+      await db.ref('siteLogs/staff').push({action:'deleteReport',target:del.dataset.reportDelete,by:window.me?.uid||'',byName:window.me?.username||window.me?.name||'',createdAt:Date.now()});
+    }
+  });
+
+  window.createReportFromAdmin=async function(){
+    if(!window.db)return alert('Firebase not ready.');
+    const type=($('newReportType')?.value||'other').trim();
+    const reason=($('newReportReason')?.value||'manual').trim();
+    const details=($('newReportDetails')?.value||'').trim();
+    await db.ref('siteReports').push({type,reason,details,status:'open',by:window.me?.uid||'',byName:window.me?.username||window.me?.name||'staff',createdAt:Date.now()});
+    if($('newReportDetails'))$('newReportDetails').value='';
+  };
+})();
+</script>
+
+<script>
+(function(){
+  const tabIds=['dashboard','users','reports','analytics','games','chat','announcements','logs','devtools'];
+  const panelMap={dashboard:'dashboardPanel',users:'usersPanel',reports:'reportsPanel',analytics:'analyticsPanel',games:'gamesPanel',chat:'chatPanel',announcements:'announcementsPanel',logs:'logsPanel',devtools:'devPanel'};
+  function activeId(){
+    const id=(new URLSearchParams(location.search).get('id')||'dashboard').toLowerCase();
+    return tabIds.includes(id)?id:'dashboard';
+  }
+  function showAdminTab(){
+    const id=activeId();
+    Object.entries(panelMap).forEach(([key,panel])=>{
+      const el=document.getElementById(panel);
+      if(el)el.style.display=(key===id?'grid':'none');
+    });
+    document.querySelectorAll('.admin-tab').forEach(a=>{
+      const url=new URL(a.href,location.href);
+      a.classList.toggle('active',(url.searchParams.get('id')||'dashboard')===id);
+    });
+  }
+  document.addEventListener('DOMContentLoaded',showAdminTab);
+  window.addEventListener('popstate',showAdminTab);
+})();
+</script>
+</body></html>

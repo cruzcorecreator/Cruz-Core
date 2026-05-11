@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#050916">
+<meta name="robots" content="noindex,nofollow">
+<title>GameHub — Conversation Viewer</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+<section class="grid layout-messages">
+  <main class="card chat-shell conversation-main">
+    <header class="chat-head">
+      <div>
+        <h1 style="margin:0;font-size:1.55rem" id="chatTitle">Pick a conversation</h1>
+        <p class="muted" style="margin:4px 0 0" id="chatSub">Admin read-only DM viewer. Sending is disabled.</p>
+      </div>
+      <a class="btn" href="admin.html?id=users">Back to Admin</a>
+    </header>
+
+    <div class="messages" id="dmMessages">
+      <div class="empty">Choose a conversation on the right.</div>
+    </div>
+
+    <div class="composer readonly-composer">
+      <input disabled value="Read-only admin viewer — sending is disabled">
+      <button class="btn" disabled>Send Disabled</button>
+    </div>
+  </main>
+
+  <aside class="card card-pad conversation-list">
+    <div class="section-head">
+      <div>
+        <h1 style="margin:0;font-size:1.4rem">Conversations</h1>
+        <p class="muted" id="viewerSub">loading...</p>
+      </div>
+    </div>
+    <div class="list" id="convos"><div class="empty">loading conversations...</div></div>
+  </aside>
+</section>
+
+<script src="login-guard.js"></script>
+<script src="shell.js"></script>
+<script>
+const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const power=r=>({banned:-1,member:0,helper:1,mod:2,admin:3,tester:4,owner:5}[r]??0);
+const qs=new URLSearchParams(location.search);
+const targetUid=qs.get('uid')||qs.get('user')||'';
+const startWith=qs.get('with')||'';
+let active=qs.get('convo')||'';
+let activeWith=startWith||'';
+let db,me,users={},dmIndex={},activeMessages=new Map(),activeListenerRef=null;
+const convoKey=(a,b)=>[String(a||''),String(b||'')].sort().join('__');
+
+function pickPhoto(u={}){
+  return (window.FGAuth?.pickPhoto?.(u))||String(u.photoURL||u.pfp||u.pfpUrl||u.profilePic||u.profilePicture||u.profileImage||u.avatar||u.avatarUrl||u.picture||u.photo||u.image||u.icon||'').trim();
+}
+function avatar(u={}){
+  const img=pickPhoto(u);
+  const initial=esc((u.name||u.displayName||u.username||'U').slice(0,1).toUpperCase());
+  if(img)return `<span class="avatar" data-initial="${initial}"><img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove();this.parentElement.textContent=this.parentElement.dataset.initial||'U';"></span>`;
+  return `<span class="avatar">${initial}</span>`;
+}
+function label(uid){
+  const u=users[uid]||{};
+  return u.name||u.username||uid||'unknown';
+}
+function otherFromIndex(c={}){
+  return c.withUid || c.fromUid || c.to || c.otherUid || '';
+}
+function renderConvos(){
+  const arr=Object.entries(dmIndex||{}).sort((a,b)=>Number(b[1]?.lastAt||0)-Number(a[1]?.lastAt||0));
+  viewerSub.textContent=targetUid ? 'Viewing DMs for '+label(targetUid) : 'No user selected';
+  convos.innerHTML=arr.map(([cid,c])=>{
+    const other=otherFromIndex(c);
+    const u=users[other]||{uid:other,name:c.fromName,username:c.fromUsername};
+    return `<button class="person ${active===cid?'convo-active':''}" data-open-convo="${esc(cid)}" data-other="${esc(other)}" type="button" style="width:100%;text-align:left;color:white">
+      ${avatar(u)}
+      <span><b>${esc(label(other))}</b><span>${esc(c.lastText||'No preview')}</span><span class="muted">${c.lastAt?new Date(c.lastAt).toLocaleString():''}</span></span>
+    </button>`;
+  }).join('')||'<div class="empty">No DM conversations indexed for this user.</div>';
+}
+function renderMessages(){
+  const list=[...activeMessages.values()].sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
+  dmMessages.innerHTML=list.map(m=>{
+    const from=users[m.from]||{uid:m.from,name:m.fromName,username:m.fromUsername};
+    return `<div class="msg ${m.from===targetUid?'mine':''}" data-mid="${esc(m.id)}">
+      ${avatar(from)}
+      <div class="msg-body">
+        <a class="msg-name" href="viewprofile.html?id=${encodeURIComponent(m.from||'')}">${esc(label(m.from))}</a>
+        <span class="msg-time">${m.createdAt?new Date(m.createdAt).toLocaleString():''}</span>
+        <div class="msg-text">${esc(m.text||'')}</div>
+        <div class="button-row" style="margin-top:8px">
+          <button class="btn danger" data-delete-msg="${esc(m.id)}" type="button">Delete Message</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('')||'<div class="empty">No messages in this conversation.</div>';
+  dmMessages.scrollTop=dmMessages.scrollHeight;
+}
+function openConvo(cid,otherUid){
+  if(!targetUid)return;
+  active=cid || convoKey(targetUid,otherUid);
+  activeWith=otherUid||activeWith;
+  renderConvos();
+  chatTitle.textContent=label(targetUid)+' ↔ '+label(activeWith);
+  chatSub.textContent='Full saved DM conversation · read-only admin view';
+  if(activeListenerRef)activeListenerRef.off();
+  activeMessages.clear();
+  renderMessages();
+  activeListenerRef=db.ref('siteDMs/'+active+'/messages').limitToLast(500);
+  activeListenerRef.on('value',snap=>{
+    activeMessages.clear();
+    snap.forEach(child=>{
+      const v=child.val()||{};
+      if(v.text||v.createdAt||v.from)activeMessages.set(child.key,{id:child.key,...v});
+    });
+    renderMessages();
+  },err=>{
+    console.error(err);
+    dmMessages.innerHTML='<div class="empty">Could not load this conversation.</div>';
+  });
+}
+async function deleteMessage(id){
+  if(!active||!id||!confirm('Delete this DM message?'))return;
+  await db.ref('siteDMs/'+active+'/messages/'+id).remove();
+  await db.ref('siteLogs/staff').push({action:'deleteDMMessage',target:active+'/'+id,by:me.uid,byName:me.username||me.name||'staff',createdAt:Date.now()});
+}
+document.addEventListener('click',e=>{
+  const open=e.target.closest('[data-open-convo]');
+  if(open){openConvo(open.dataset.openConvo,open.dataset.other);return;}
+  const del=e.target.closest('[data-delete-msg]');
+  if(del)deleteMessage(del.dataset.deleteMsg);
+});
+document.addEventListener('fg-auth-ready',async()=>{
+  me=window.FGUser||{};
+  if(power(me.role||me.rank)<3 && String(me.username||'').toLowerCase()!=='cruz'){
+    document.body.innerHTML='<main style="padding:30px"><h1>Access denied</h1><p>You need admin rank or higher.</p></main>';
+    return;
+  }
+  if(!targetUid){
+    dmMessages.innerHTML='<div class="empty">No user selected. Open this from Admin > Users.</div>';
+    convos.innerHTML='<div class="empty">No user selected.</div>';
+    return;
+  }
+  await FGAuth.initFirebase();
+  db=FGAuth.db();
+  db.ref('siteUsers').on('value',s=>{
+    users=s.val()||{};
+    renderConvos();
+    if(active)renderMessages();
+  });
+  db.ref('siteDMIndex/'+targetUid).on('value',s=>{
+    dmIndex=s.val()||{};
+    renderConvos();
+    if(!active && startWith){
+      const cid=convoKey(targetUid,startWith);
+      openConvo(cid,startWith);
+    }else if(!active){
+      const first=Object.entries(dmIndex||{}).sort((a,b)=>Number(b[1]?.lastAt||0)-Number(a[1]?.lastAt||0))[0];
+      if(first)openConvo(first[0],otherFromIndex(first[1]));
+    }else if(active && !activeListenerRef){
+      openConvo(active,activeWith);
+    }
+  });
+});
+</script>
+</body>
+</html>
