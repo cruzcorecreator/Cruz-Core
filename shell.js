@@ -209,7 +209,9 @@ function startActiveLeveling(){
             if(!snap||!snap.exists())return;
             const cur=snap.val()||{};
             const total=Number(cur.activeSeconds||0)+60;
-            const level=Math.floor(total/120);
+            const earnedLevel=Math.floor(total/120);
+            const currentLevel=Number(cur.level||0);
+            const level=Math.max(currentLevel,earnedLevel);
             await ref.update({activeSeconds:total,level,lastActiveLevelTick:Date.now()});
           }
         }
