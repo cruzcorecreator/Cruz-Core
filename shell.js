@@ -188,7 +188,11 @@
   }
 
 
-function fgTopNotify(title,msg,kind='info'){
+function fgNotifSeenKey(id){return 'fg.topnotif.seen.'+String(id||'').replace(/[^a-zA-Z0-9_.:-]/g,'_')}
+function fgHasSeenNotif(id){if(!id)return false;try{return localStorage.getItem(fgNotifSeenKey(id))==='yes'}catch{return false}}
+function fgMarkNotifSeen(id){if(!id)return;try{localStorage.setItem(fgNotifSeenKey(id),'yes')}catch{}}
+function fgTopNotify(title,msg,kind='info',id=''){
+  if(id&&fgHasSeenNotif(id))return;
   let wrap=document.getElementById('fgTopNotifyWrap');
   if(!wrap){
     wrap=document.createElement('div');
@@ -199,9 +203,10 @@ function fgTopNotify(title,msg,kind='info'){
   const n=document.createElement('div');
   n.style.cssText='pointer-events:auto;background:rgba(15,23,42,.96);border:1px solid rgba(96,165,250,.45);box-shadow:0 18px 60px rgba(0,0,0,.45);color:white;border-radius:18px;padding:13px 16px;font:800 14px Inter,system-ui;animation:fgToastIn .18s ease-out;';
   n.innerHTML=`<b>${esc(title)}</b><div style="font-weight:600;color:#cbd5e1;margin-top:3px">${esc(msg)}</div>`;
-  n.onclick=()=>n.remove();
+  const close=()=>{fgMarkNotifSeen(id);n.remove();};
+  n.onclick=close;
   wrap.appendChild(n);
-  setTimeout(()=>{if(n.isConnected)n.remove()},6500);
+  setTimeout(close,6500);
 }
 function startTopNotifications(){
   if(window.__fgTopNotificationsStarted)return;
@@ -220,7 +225,7 @@ function startTopNotifications(){
       if(seen.friends.has(s.key))return;
       seen.friends.add(s.key);
       if(Number(r.createdAt||0)&&Date.now()-Number(r.createdAt||0)>120000)return;
-      fgTopNotify('Friend request',`${r.name||r.username||'Someone'} sent you a friend request`);
+      fgTopNotify('Friend request',`${r.name||r.username||'Someone'} sent you a friend request`,'friend','friend:'+myUid+':'+s.key);
     });
 
     db.ref('siteDMIndex/'+myUid).limitToLast(20).on('child_added',s=>{
@@ -229,13 +234,13 @@ function startTopNotifications(){
       seen.dms.add(s.key);
       if(Number(r.lastAt||0)&&Date.now()-Number(r.lastAt||0)>120000)return;
       if(r.fromUid===myUid)return;
-      fgTopNotify('New DM',`${r.fromName||r.fromUsername||'Someone'}: ${String(r.lastText||'sent a message').slice(0,90)}`);
+      fgTopNotify('New DM',`${r.fromName||r.fromUsername||'Someone'}: ${String(r.lastText||'sent a message').slice(0,90)}`,'dm','dm:'+myUid+':'+s.key+':'+String(r.lastAt||''));
     });
     db.ref('siteDMIndex/'+myUid).limitToLast(20).on('child_changed',s=>{
       const r=s.val()||{};
       if(Number(r.lastAt||0)&&Date.now()-Number(r.lastAt||0)>120000)return;
       if(r.fromUid===myUid)return;
-      fgTopNotify('New DM',`${r.fromName||r.fromUsername||'Someone'}: ${String(r.lastText||'sent a message').slice(0,90)}`);
+      fgTopNotify('New DM',`${r.fromName||r.fromUsername||'Someone'}: ${String(r.lastText||'sent a message').slice(0,90)}`,'dm','dm:'+myUid+':'+s.key+':'+String(r.lastAt||''));
     });
 
     db.ref('fun-and-games-chat/messages').limitToLast(25).on('child_added',s=>{
@@ -247,7 +252,7 @@ function startTopNotifications(){
       const text=String(m.text||'');
       const low=text.toLowerCase();
       const tagged=(myUser&&low.includes('@'+myUser))||(myName&&low.includes('@'+myName))||(myUser&&low.includes(myUser));
-      if(tagged)fgTopNotify('You were tagged',`${m.name||m.username||'Someone'}: ${text.slice(0,100)}`);
+      if(tagged)fgTopNotify('You were tagged',`${m.name||m.username||'Someone'}: ${text.slice(0,100)}`,'tag','tag:'+myUid+':'+s.key);
     });
   }).catch(()=>{});
 }

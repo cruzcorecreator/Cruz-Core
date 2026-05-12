@@ -31,7 +31,7 @@
 const DB_ROOT='fun-and-games-chat';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-let db=null, fs=null, users={}, presence={}, customCommands={}, chatSettings={}, chatMessagesCache={}, me=null, loaded=false; let lastChatSendAt=0; const NOVA_UID='bot-nova';
+let db=null, fs=null, users={}, presence={}, customCommands={}, chatSettings={}, chatMessagesCache={}, siteWordFilters={}, me=null, loaded=false; let lastChatSendAt=0; const NOVA_UID='bot-nova';
 
 const GROQ_API_KEY='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';
 let novaLastReply=0;
@@ -546,6 +546,68 @@ Keep it short.
 }
 
 
+
+
+async function checkAutoBanAfterWarning(uid, latestReason=''){
+  if(!uid||!db)return;
+  const userSnap=await db.ref('siteUsers/'+uid).get().catch(()=>null);
+  const user=(userSnap&&userSnap.exists()?userSnap.val():users[uid]||{})||{};
+  if(String(user.role||user.rank||'').toLowerCase()==='banned')return;
+  const warnSnap=await db.ref('siteWarnings/'+uid).get().catch(()=>null);
+  const warnings=[];
+  if(warnSnap&&warnSnap.exists())warnSnap.forEach(c=>warnings.push({id:c.key,...(c.val()||{})}));
+  if(warnings.length<3)return;
+  const reason='Auto-banned after 3 warnings. Latest warning: '+(latestReason||warnings[warnings.length-1]?.reason||'No reason listed.');
+  await db.ref('siteAutoBans/'+uid).set({uid,username:user.username||'',name:user.name||user.displayName||user.username||uid,reason,warningCount:warnings.length,warnings:warnings.slice(-10),status:'active',createdAt:Date.now(),createdBy:'system'});
+  await db.ref('siteUsers/'+uid).update({role:'banned',rank:'banned',banTitle:'Account Banned',banDescription:'You were automatically banned after receiving 3 warnings.',banReason:reason,bannedAt:Date.now(),autoBanned:true,autoBanWarningCount:warnings.length});
+  await db.ref('siteNotifications/'+uid).push({text:'You were automatically banned after 3 warnings.',type:'warning',createdAt:Date.now(),seen:false});
+  await db.ref('siteLogs/staff').push({action:'autoBan3Warnings',target:uid,details:reason,by:'system',byName:'System',createdAt:Date.now()});
+}
+async function addWarningAndMaybeAutoBan(uid,reason,by='system',byName='System'){
+  if(!uid||!db)return;
+  const text=String(reason||'Please follow the rules.').trim()||'Please follow the rules.';
+  await db.ref('siteWarnings/'+uid).push({reason:text,by,byName,createdAt:Date.now()});
+  await db.ref('siteNotifications/'+uid).push({text:'Admin warning: '+text,type:'warning',createdAt:Date.now(),seen:false});
+  await checkAutoBanAfterWarning(uid,text);
+}
+
+function activeWordFilter(text){
+  const raw=String(text||'');
+  const low=raw.toLowerCase();
+  for(const [key,f] of Object.entries(siteWordFilters||{})){
+    const word=String(f.word||key||'').toLowerCase().trim();
+    if(!word)continue;
+    if(low.includes(word))return {key,word,action:f.action||'delete'};
+  }
+  return null;
+}
+async function handleWordFilter(text){
+  const hit=activeWordFilter(text);
+  if(!hit)return {ok:true,text};
+  const action=String(hit.action||'delete').toLowerCase();
+  if(action==='block'){window.FGAuth?.showNotice?.('Message blocked by word filter.');return {ok:false};}
+  if(action==='warn'){
+    await addWarningAndMaybeAutoBan(me.uid,'Automatic warning: filtered word "'+hit.word+'"','system','System');
+    return {ok:true,text};
+  }
+  if(action==='report'){
+    await db.ref('siteReports').push({type:'word-filter',reason:'Filtered word: '+hit.word,description:text.slice(0,500),targetUid:me.uid,targetName:me.name||me.username,reporterUid:'system',reporterName:'Word Filter',status:'open',createdAt:Date.now()});
+    return {ok:true,text};
+  }
+  if(action==='autodeletereportandwarn'){
+    window.FGAuth?.showNotice?.('Message removed by word filter.');
+    await db.ref('siteReports').push({type:'word-filter-delete-report-warn',reason:'Auto-delete/report/warn filtered word: '+hit.word,description:text.slice(0,500),targetUid:me.uid,targetName:me.name||me.username,reporterUid:'system',reporterName:'Word Filter',status:'open',createdAt:Date.now()});
+    await addWarningAndMaybeAutoBan(me.uid,'Automatic warning: filtered word "'+hit.word+'"','system','System');
+    return {ok:false};
+  }
+  if(action==='delete'){
+    window.FGAuth?.showNotice?.('Message removed by word filter.');
+    await db.ref('siteReports').push({type:'word-filter-delete',reason:'Auto-deleted filtered word: '+hit.word,description:text.slice(0,500),targetUid:me.uid,targetName:me.name||me.username,reporterUid:'system',reporterName:'Word Filter',status:'open',createdAt:Date.now()});
+    return {ok:false};
+  }
+  return {ok:true,text};
+}
+
 async function sendChat(){
   if(sending)return;
   me=window.FGUser;
@@ -554,6 +616,8 @@ async function sendChat(){
   me=currentMe();
   if((me.role||'member')==='banned'||Number(me.mutedUntil||0)>Date.now()){window.FGAuth?.showNotice?.('You cannot send chat messages right now.');return;}
   const text=input.value.trim(); if(!text)return;
+  const filterResult=await handleWordFilter(text);
+  if(!filterResult.ok){input.value='';input.focus();return;}
   const slowMs=Number(chatSettings.slowmodeMs||3000);
   if(!isStaff() && lastChatSendAt && Date.now()-lastChatSendAt<slowMs){
     window.FGAuth?.showNotice?.('Slowmode: wait '+Math.ceil((slowMs-(Date.now()-lastChatSendAt))/1000)+'s.');
@@ -613,7 +677,7 @@ if(isStaff()){ const cb=$('commandsBtn'); if(cb) cb.style.display='inline-flex';
 $('commandsBtn')?.addEventListener('click',()=>$('commandsModal')?.classList.add('open'));
 $('closeCommands')?.addEventListener('click',()=>$('commandsModal')?.classList.remove('open'));
 $('commandsModal')?.addEventListener('click',e=>{if(e.target===$('commandsModal')) $('commandsModal').classList.remove('open')});
- db.ref('siteUsers').on('value',s=>{users=s.val()||{};document.dispatchEvent(new CustomEvent('fg-user-updated',{detail:window.FGUser}));renderMembers();}); db.ref('sitePresence').on('value',s=>{presence=s.val()||{};renderMembers();}); db.ref('siteCustomCommands').on('value',s=>{customCommands=s.val()||{};}); db.ref('siteChatSettings').on('value',s=>{chatSettings=s.val()||{};}); const box=$('messages'); loaded=false; if(box)box.innerHTML='<div class="empty">No messages yet.</div>'; db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_added',snap=>{if($('messages')?.querySelector('.empty')) $('messages').innerHTML=''; loaded=true; insertOrUpdate({id:snap.key,...snap.val()});}); db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_changed',snap=>insertOrUpdate({id:snap.key,...snap.val()})); db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_removed',snap=>{const el=document.querySelector(`[data-mid="${CSS.escape(snap.key)}"]`); if(el)el.remove();});}
+ db.ref('siteUsers').on('value',s=>{users=s.val()||{};document.dispatchEvent(new CustomEvent('fg-user-updated',{detail:window.FGUser}));renderMembers();}); db.ref('sitePresence').on('value',s=>{presence=s.val()||{};renderMembers();}); db.ref('siteCustomCommands').on('value',s=>{customCommands=s.val()||{};}); db.ref('siteChatSettings').on('value',s=>{chatSettings=s.val()||{};}); db.ref('siteWordFilters').on('value',s=>{siteWordFilters=s.val()||{};}); const box=$('messages'); loaded=false; if(box)box.innerHTML='<div class="empty">No messages yet.</div>'; db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_added',snap=>{if($('messages')?.querySelector('.empty')) $('messages').innerHTML=''; loaded=true; insertOrUpdate({id:snap.key,...snap.val()});}); db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_changed',snap=>insertOrUpdate({id:snap.key,...snap.val()})); db.ref(DB_ROOT+'/messages').limitToLast(120).on('child_removed',snap=>{const el=document.querySelector(`[data-mid="${CSS.escape(snap.key)}"]`); if(el)el.remove();});}
 document.addEventListener('fg-auth-ready',()=>start().catch(err=>{console.error(err);const box=$('messages');if(box)box.innerHTML='<div class="empty">Chat failed to load: '+esc(err.message||err)+'</div>';}),{once:true});
 setTimeout(bindForm,400);setTimeout(bindForm,1200);
 })();
