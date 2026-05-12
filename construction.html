@@ -209,6 +209,18 @@
       }
     }
   </style>
+
+<style id="mobilePatch">
+@media(max-width:700px){
+  html,body{max-width:100%;overflow-x:hidden}
+  body{padding:10px!important}
+  .container,.shell,.wrap,main,section{max-width:100%!important}
+  .grid{grid-template-columns:1fr!important}
+  .topbar,.header{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+  iframe{width:100%!important;max-width:100%!important;height:70svh!important}
+  .btn,button,a{max-width:100%}
+}
+</style>
 </head>
 <body>
   <div class="grid"></div>

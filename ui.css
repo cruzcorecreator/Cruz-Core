@@ -489,3 +489,117 @@
   letter-spacing:.04em;
 }
 .msg .bot-message .msg-text{}
+
+
+/* MOBILE RESPONSIVE NORMALIZER — added */
+html{max-width:100%;overflow-x:hidden}
+body{max-width:100%;overflow-x:hidden}
+img,video,iframe{max-width:100%}
+input,textarea,select,button{font-size:16px}
+.card,.hero,.profile-hero,.game-card,.person,.modal-box{max-width:100%}
+.search{min-width:0;max-width:100%}
+.section-head{min-width:0}
+.section-head>*{min-width:0}
+.button-row{min-width:0}
+.btn,.icon-btn{white-space:normal;text-align:center}
+.person{min-width:0}
+.person>*{min-width:0}
+.person b,.person span{overflow-wrap:anywhere}
+.msg-text,.msg-name,.muted{overflow-wrap:anywhere}
+.logs-list,.list{min-width:0}
+
+@media(max-width:900px){
+  body{padding:0}
+  .app{display:block;min-height:100svh}
+  .side{position:fixed;z-index:1000;top:0;bottom:0;left:0;width:min(82vw,300px);max-width:300px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:0 20px 70px rgba(0,0,0,.45)}
+  .side.open{transform:translateX(0)}
+  .main{width:100%;padding:10px 10px 18px}
+  .topbar{height:auto;min-height:58px;grid-template-columns:auto 1fr auto;gap:8px;margin:-10px -10px 12px;padding:8px 10px;position:sticky;top:0;z-index:20}
+  .topbar>.search{display:none!important}
+  .top-actions{gap:7px}
+  .user-pill{max-width:48vw;padding:5px 7px}
+  .user-pill span:not(.avatar){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mobile-menu{display:inline-flex!important}
+  .layout-home,.layout-games,.layout-chat,.layout-messages{display:grid;grid-template-columns:1fr!important;gap:12px}
+  .right-col{display:grid!important;grid-template-columns:1fr!important;gap:12px}
+  .section-head{display:grid;grid-template-columns:1fr;align-items:start;gap:10px;margin:10px 0}
+  .section-head .search{width:100%}
+  .hero{min-height:0;padding:20px;border-radius:18px}
+  .hero h1,.page-title{font-size:clamp(2rem,12vw,3.1rem);letter-spacing:-.06em;line-height:.95}
+  .card{border-radius:16px}
+  .card-pad{padding:14px}
+  .game-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .game-card{min-height:150px;border-radius:15px}
+  .game-info{padding:12px}
+  .game-info h3{font-size:.95rem}
+  .filters{gap:7px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+  .filter{flex:0 0 auto}
+  .profile-hero{grid-template-columns:1fr!important;align-items:start;padding:16px;border-radius:18px}
+  .big-avatar{width:92px!important;height:92px!important;border-radius:24px;font-size:2.6rem}
+  .button-row{display:grid;grid-template-columns:1fr;gap:8px;width:100%}
+  .button-row .btn,.button-row button,.button-row a{width:100%;justify-content:center}
+  .person{grid-template-columns:auto minmax(0,1fr);gap:9px}
+  .person>.button-row,.person>button,.person>a.btn,.person>.btn{grid-column:1/-1}
+  .chat-shell,.conversation-main{height:calc(100svh - 82px)!important;min-height:0!important;border-radius:16px}
+  .conversation-list{height:auto!important;max-height:34svh;min-height:0!important;order:-1;border-radius:16px;overflow:auto}
+  .chat-head{padding:12px;gap:10px;align-items:flex-start}
+  .chat-head h1{font-size:1.15rem!important}
+  .messages{padding:12px;gap:12px}
+  .msg{grid-template-columns:auto minmax(0,1fr);gap:9px}
+  .msg.mine{max-width:94%!important}
+  .composer{padding:10px;gap:8px}
+  .composer input{height:46px;min-width:0}
+  .composer .btn,.composer button{padding:0 12px;min-width:64px}
+}
+
+@media(max-width:520px){
+  .main{padding:8px 8px 16px}
+  .topbar{margin:-8px -8px 10px;padding:8px}
+  .icon-btn,.btn{min-height:40px;border-radius:12px;padding:0 11px}
+  .user-pill{max-width:44vw}
+  .game-row{grid-template-columns:1fr}
+  .game-card{min-height:140px}
+  .hero{padding:16px}
+  .card-pad{padding:12px}
+  .chat-shell,.conversation-main{height:calc(100svh - 74px)!important}
+  .conversation-list{max-height:30svh}
+  .chat-head{display:grid;grid-template-columns:1fr;gap:8px}
+  .composer{display:grid;grid-template-columns:1fr auto}
+  .composer input{width:100%}
+  .profile-hero{padding:14px}
+}
+
+/* Admin mobile fixes */
+.admin-shell,.admin-page{max-width:100%;overflow-x:hidden}
+.admin-tabs,.admin-nav,.admin-sidebar{max-width:100%}
+.admin-section{min-width:0}
+.report-card{min-width:0}
+.report-card>*{min-width:0}
+.report-card p,.report-card b{overflow-wrap:anywhere}
+.firebase-tree,.firebase-row,.fb-row{min-width:0;max-width:100%;overflow-wrap:anywhere}
+
+@media(max-width:900px){
+  body:has(.admin-shell),body:has(.admin-page){overflow-x:hidden}
+  .admin-shell,.admin-page{display:block!important;padding:8px!important}
+  .admin-tabs,.admin-nav{display:flex!important;gap:8px;overflow-x:auto;white-space:nowrap;position:sticky;top:0;z-index:30;background:rgba(5,9,22,.94);backdrop-filter:blur(12px);padding:8px;margin:-8px -8px 10px}
+  .admin-tab{flex:0 0 auto}
+  .admin-layout{grid-template-columns:1fr!important;gap:12px}
+  .admin-users{height:auto!important;max-height:42svh;min-height:0!important}
+  .admin-detail{min-height:0!important}
+  .admin-tools{grid-template-columns:1fr!important}
+  .admin-actions{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+  .admin-actions .btn,.admin-actions button{width:100%}
+  .admin-section .grid{grid-template-columns:1fr!important}
+  .report-card{display:grid!important;grid-template-columns:1fr!important;gap:10px}
+  .modal-box{width:calc(100vw - 22px);max-height:88svh;overflow:auto;padding:14px;border-radius:18px}
+  .firebase-toolbar{display:grid!important;grid-template-columns:1fr!important}
+  .firebase-urlbar{min-width:0;width:100%;overflow:auto}
+  .firebase-row{font-size:.88rem}
+  table{display:block;max-width:100%;overflow-x:auto}
+}
+
+@media(max-width:520px){
+  .admin-actions{grid-template-columns:1fr}
+  .admin-tabs,.admin-nav{gap:6px}
+  .admin-tab{padding:9px 10px}
+}
