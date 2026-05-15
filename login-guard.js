@@ -97,18 +97,14 @@ function hideWall(){
   const mod=$('fgModerationPage');
   if(mod) mod.remove();
 }
-function showWall(mode='signin',msg=''){injectStyles();document.body.classList.add('fg-locked');$('fgLoginWall')?.remove();const signup=mode==='signup';const wall=document.createElement('div');wall.id='fgLoginWall';wall.className='fg-lock';wall.innerHTML=`<div class="fg-card"><h1>${signup?'sign up':'sign in'}</h1><p>You need an account before you can use this site.</p><div class="fg-tabs"><button id="fgIn" class="${!signup?'active':''}" type="button">sign in</button><button id="fgUp" class="${signup?'active':''}" type="button">sign up</button></div><div id="fgForm"></div><div id="fgError" class="fg-error">${esc(msg)}</div></div>`;document.body.appendChild(wall);$('fgIn').onclick=()=>showWall('signin');$('fgUp').onclick=()=>showWall('signup');renderForm(signup)}
+function showWall(mode='signin',msg=''){injectStyles();document.body.classList.add('fg-locked');$('fgLoginWall')?.remove();const signup=mode==='signup';const wall=document.createElement('div');wall.id='fgLoginWall';wall.className='fg-lock';wall.innerHTML=`<div class="fg-card"><h1>${signup?'request account':'sign in'}</h1><p>You need an account before you can use this site.</p><div class="fg-tabs"><button id="fgIn" class="${!signup?'active':''}" type="button">sign in</button><a id="fgUp" class="${signup?'active':''}" href="https://forms.gle/GNyvjX1apkjKjAEs6" target="_blank" rel="noopener">request account</a></div><div id="fgForm"></div><div id="fgError" class="fg-error">${esc(msg)}</div></div>`;document.body.appendChild(wall);$('fgIn').onclick=()=>showWall('signin');renderForm(signup)}
 function renderForm(signup){
   const f=$('fgForm');
   if(!f)return;
   f.innerHTML=signup
-    ? `<div class="fg-rules"><b>signup rules</b><br>Display name: use your real name. Fake names can get banned.<br>Username: no email, no spaces, letters/numbers only.<br>Do not put your Chromebook or Google email here.</div><input id="fgName" placeholder="display name, real name only" autocomplete="off" autocapitalize="words" spellcheck="false" data-lpignore="true" data-form-type="other"><input id="fgUser" placeholder="username, no email or spaces" autocomplete="off" autocapitalize="none" spellcheck="false" inputmode="text" data-lpignore="true" data-form-type="other"><input id="fgPass" placeholder="password" type="password" autocomplete="new-password"><button id="fgCreate" class="primary" type="button">create account</button><p class="fg-note">Do not use an email as your username. Usernames are checked in Firebase.</p>`
+    ? `<div class="fg-rules"><b>request an account</b><br>Signups are handled through a Google Form now. Do not put your school email as your username. Use your real name.</div><a class="primary" style="display:block;text-align:center;text-decoration:none;padding:12px;border-radius:12px" href="https://forms.gle/GNyvjX1apkjKjAEs6" target="_blank" rel="noopener">open signup form</a><p class="fg-note">After staff creates your account, come back here and sign in.</p>`
     : `<input id="fgUser" placeholder="username, not email" autocomplete="off" autocapitalize="none" spellcheck="false" data-lpignore="true" data-form-type="other"><input id="fgPass" placeholder="password" type="password" autocomplete="current-password"><button id="fgLogin" class="primary" type="button">sign in</button>`;
-  if(signup){
-    $('fgCreate').onclick=signupLocal;
-    $('fgName')?.addEventListener('input',e=>{e.target.value=e.target.value.replace(/@/g,'').replace(/\s{2,}/g,' ')});
-    $('fgUser')?.addEventListener('input',e=>{e.target.value=e.target.value.toLowerCase().replace(/@.*/g,'').replace(/\s+/g,'').replace(/[^a-z0-9_.-]/g,'').slice(0,24)});
-  }else{
+  if(!signup){
     $('fgLogin').onclick=loginLocal;
     $('fgPass').addEventListener('keydown',e=>{if(e.key==='Enter')loginLocal()});
   }
@@ -116,24 +112,28 @@ function renderForm(signup){
 async function initFirebase(){if(firebaseReady)return firebaseReady;firebaseReady=(async()=>{await loadScript('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js');await loadScript('https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js');if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();return db})();return firebaseReady}
 function profileBase(uid,username,name,hash,role='member',provider='site-account'){return normalizeUser({uid,username,name:name||username,provider,role,rank:role,passwordHash:hash||'',bio:'',photoURL:'',warnings:0,bannedUntil:0,timeoutUntil:0,mutedUntil:0,recentGames:[],deviceId:deviceId(),createdAt:Date.now(),lastSeen:Date.now()})}
 
-async function ensureNovaBot(){
+
+async function ensureBotAccount(uid,username,name,bio,photoURL=''){
   try{
     await initFirebase();
-    const uid='bot-nova', username='nova';
     const hash=await sha256('Cruz10312');
     const ref=db.ref('siteUsers/'+uid);
     const snap=await ref.get();
-    const base={uid,username,name:'Nova',displayName:'Nova',provider:'bot-account',role:'bot',rank:'bot',passwordHash:hash,bio:'GameHub AI bot account. Mention @nova or @bot when AI chat is enabled.',photoURL:'',pfp:'',isBot:true,bot:true,verified:true,createdAt:Date.now(),lastSeen:Date.now(),currentPage:'helping users'};
+    const base={uid,username,name,displayName:name,provider:'bot-account',role:'bot',rank:'bot',passwordHash:hash,bio,photoURL,pfp:photoURL,isBot:true,bot:true,verified:true,createdAt:Date.now(),lastSeen:Date.now(),currentPage:'helping users'};
     if(snap.exists()){
       const old=snap.val()||{};
-      await ref.update({...base,...old,uid,username,role:old.role||'bot',rank:old.rank||'bot',passwordHash:old.passwordHash||hash,isBot:true,bot:true,verified:true});
+      await ref.update({...base,...old,uid,username,name:old.name||name,displayName:old.displayName||old.name||name,role:'bot',rank:'bot',passwordHash:old.passwordHash||hash,isBot:true,bot:true,verified:true});
     }else{
       await ref.set(base);
     }
     await db.ref('siteUsernames/'+username).set(uid);
-  }catch(e){console.warn('Nova bot seed failed',e)}
+  }catch(e){console.warn(name+' bot seed failed',e)}
 }
 
+async function ensureNovaBot(){
+  await ensureBotAccount('bot-nova','nova','Nova','GameHub AI bot account. Say nova when AI chat is enabled.','https://mir-s3-cdn-cf.behance.net/projects/404/aa9f81144900743.Y3JvcCwxMTkyLDkzMywxNCww.jpg');
+  await ensureBotAccount('bot-astro','astro','Astro','GameHub AI bot account. Say astro when AI chat is enabled.','https://cdn-icons-png.flaticon.com/512/4712/4712109.png');
+}
 async function usernameTaken(username){await initFirebase();const snap=await db.ref('siteUsernames/'+username).get();return snap.exists()?snap.val():null}
 async function saveUser(u){
   u=normalizeUser(u);

@@ -617,7 +617,7 @@
   
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getDatabase, ref, get, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDvKpZacWOgca6PtoA6wP2QFX3JbI-Dvw4",
@@ -705,6 +705,26 @@ if (frame) {
   document.addEventListener('MSFullscreenChange', syncFullscreenButton);
 
 
+
+  function localGameUser(){
+    try{return JSON.parse(localStorage.getItem('fg.user.v4')||localStorage.getItem('fg.user.v3')||'{}')}catch(e){return {}}
+  }
+  async function awardGamePageLevel(id, amount=2){
+    const me=localGameUser();
+    if(!me?.uid || !id) return;
+    const nextLevel=Number(me.level||0)+amount;
+    const nextActive=Number(me.activeSeconds||0)+(amount*60);
+    me.level=nextLevel;
+    me.activeSeconds=nextActive;
+    localStorage.setItem('fg.user.v4',JSON.stringify(me));
+    localStorage.setItem('fg.user.v3',JSON.stringify(me));
+    try{
+      await update(ref(db,'siteUsers/'+me.uid),{level:nextLevel,activeSeconds:nextActive,currentGame:id,lastPlayedAt:Date.now(),lastLevelUpAt:Date.now(),lastLevelGame:id});
+      await runTransaction(ref(db,'homepageAdmin/gameStats/'+id+'/plays'), v => (Number(v)||0)+1);
+      await runTransaction(ref(db,'homepageAdmin/games/'+id+'/playCount'), v => (Number(v)||0)+1);
+    }catch(e){console.warn('level update failed',e)}
+  }
+
   function showMissing(message) {
     setText(pageTitle, 'game not found');
     setText(pageSubtitle, message || 'This item could not be loaded.');
@@ -730,6 +750,7 @@ if (frame) {
     }
 
     const game = snap.val() || {};
+    await awardGamePageLevel(gameId,2);
     const launchUrl = game.sourceUrl || game.embedUrl || '';
 
     if (game.locked) {

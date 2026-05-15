@@ -19,7 +19,7 @@
   function navItems(u){return nav.concat(canAdmin(u)?[['admin.html','🛡️','Admin Panel']]:[]).map(([href,icon,label])=>`<a class="nav-item ${page===href?'active':''}" href="${href}"><span>${icon}</span><span>${label}</span></a>`).join('')}
   function renderUserBits(){
     const u=window.FGUser||{};
-    const level=Number(u.level||0);const levelHtml=`<span class="top-level-pill">Lv ${level}</span>`;const display=`<span class="${rewardNameClass(u)}" ${rewardNameStyle(u)}>${esc(nameOf(u))}</span>`;const badges=rewardBadges(u);const htmlTop=`${avatar(u)}<span><b>${display} ${roleEmoji[u.role||u.rank||'member']||''} ${levelHtml} ${badges}</b><small class="rank">${esc(u.role||u.rank||'member')}</small></span><span class="status-dot"></span>`;
+    const level=Number(u.level||0);const levelHtml=`<span class="top-level-pill">Lv ${level}</span>`;const display=`<span class="${rewardNameClass(u)}" ${rewardNameStyle(u)}>${esc(nameOf(u))}</span>${verifiedBadge(u)}`;const badges=rewardBadges(u);const htmlTop=`${avatar(u)}<span><b>${display} ${roleEmoji[u.role||u.rank||'member']||''} ${levelHtml} ${badges}</b><small class="rank">${esc(u.role||u.rank||'member')}</small></span><span class="status-dot"></span>`;
     const top=document.getElementById('shellTopUser');
     if(top) top.innerHTML=htmlTop;
     const side=document.getElementById('shellSideUser');
@@ -177,7 +177,8 @@
     const color=String(u?.nameColor||'').trim();
     return rewards.customNameColor && color ? `style="color:${esc(color)}"` : '';
   }
-  function rewardBadges(u){
+  function verifiedBadge(u){return u&&u.verified?'<span class="verified-badge" title="Verified">✓</span>':''}
+function rewardBadges(u){
     const custom=String(u?.customTag||'').trim().slice(0,18);
     if(custom) return `<span class="custom-user-tag">${esc(custom).toUpperCase()}</span>`;
     const lvl=Number(u?.level||0), r=getLevelRewards(lvl);

@@ -17,10 +17,10 @@ const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt
 let db, me, users = {}, dmIndex = {}, active = null, activeWith = null;
 let activeMessages = new Map();
 let activeListenerRef = null;
-let sending = false;
+let sending = false; const NOVA_UID='bot-nova'; const ASTRO_UID='bot-astro'; const BOT_ACCOUNTS={ [NOVA_UID]:{uid:NOVA_UID,username:'nova',name:'Nova',photoURL:'https://mir-s3-cdn-cf.behance.net/projects/404/aa9f81144900743.Y3JvcCwxMTkyLDkzMywxNCww.jpg'}, [ASTRO_UID]:{uid:ASTRO_UID,username:'astro',name:'Astro',photoURL:'https://cdn-icons-png.flaticon.com/512/4712/4712109.png'} }; const GROQ_API_KEY='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'; let novaDmBusy=false;
 
 const convoKey = (a, b) => [String(a || ''), String(b || '')].sort().join('__');
-const urlWith = () => new URLSearchParams(location.search).get('with') || '';
+const urlWith = () => { const w=(new URLSearchParams(location.search).get('with')||'').toLowerCase(); return w==='astro'||w==='@astro' ? ASTRO_UID : (w==='nova'||w==='@nova' ? NOVA_UID : w); };
 
 function pickPhoto(u = {}) {
   return (window.FGAuth?.pickPhoto?.(u)) || String(
@@ -45,8 +45,12 @@ function getOtherId(c = {}) {
 function renderConvos() {
   const arr = Object.entries(dmIndex || {}).map(([id, v]) => ({ id, ...(v || {}) }))
     .sort((a, b) => Number(b.lastAt || 0) - Number(a.lastAt || 0));
+  const fixedBotConvos = [NOVA_UID, ASTRO_UID]
+    .filter(uid => me?.uid && !arr.some(c => getOtherId(c) === uid))
+    .map(uid => ({ id: convoKey(me.uid, uid), withUid: uid, fromUid: uid, fromName: BOT_ACCOUNTS[uid].name, fromUsername: BOT_ACCOUNTS[uid].username, lastText: 'DM ' + BOT_ACCOUNTS[uid].name, lastAt: 0 }));
+  const allConvos = [...fixedBotConvos, ...arr];
 
-  convos.innerHTML = arr.map(c => {
+  convos.innerHTML = allConvos.map(c => {
     const oid = getOtherId(c);
     const u = users[oid] || { uid: oid, username: c.fromUsername || oid || 'user', name: c.fromName || c.fromUsername || 'user' };
     return `<button class="person ${active === c.id ? 'convo-active' : ''}" data-convo="${esc(c.id)}" data-with="${esc(oid)}" type="button" style="width:100%;text-align:left;color:white">${avatar(u)}<span><b>${esc(u.name || u.username || 'user')}</b><span>${esc(c.lastText || '')}</span></span></button>`;
@@ -90,6 +94,7 @@ function startLiveMessages(convo) {
 
 function openConvo(id, withUid) {
   if (!withUid || !me?.uid) return;
+  if(BOT_ACCOUNTS[withUid]) users[withUid]=BOT_ACCOUNTS[withUid];
   active = id || convoKey(me.uid, withUid);
   activeWith = withUid;
   renderConvos();
@@ -104,11 +109,73 @@ function maybeOpenFromUrl() {
   if (withUid && me?.uid && activeWith !== withUid) openConvo(convoKey(me.uid, withUid), withUid);
 }
 
+
+
+
+function cleanNovaReply(reply=''){
+  return String(reply||'')
+    .replace(/^\s*(nova|astro|bot)\s*:\s*/i,'')
+    .replace(/^\s*(i('|’)m|i am|im)\s+(checking|looking|searching|working|doing|generating|processing|handling)[^.!?]*[.!?]?\s*/i,'')
+    .replace(/\b(high|drunk|hungover|faded|intoxicated|stoned)\b/gi,'tired')
+    .replace(/\b(weed|drugs|alcohol)\b/gi,'stuff')
+    .replace(/\b(fuck|shit|bitch|asshole|dick|damn|hell)\b/gi, m=>({fuck:'frick',shit:'crap',bitch:'jerk',asshole:'jerk',dick:'dude',damn:'dang',hell:'heck'}[String(m).toLowerCase()]||'dang'))
+    .trim();
+}
+async function novaEnabled(){
+  try{
+    const s=await db.ref('siteSettings/nova/enabled').get();
+    if(!s.exists()){await db.ref('siteSettings/nova/enabled').set(true);return true;}
+    return s.val()!==false;
+  }catch(e){return true}
+}
+async function setNovaAI(value){
+  await db.ref('siteSettings/nova').update({enabled:!!value,updatedAt:Date.now(),updatedBy:me?.uid||''});
+  await db.ref('siteNovaLogs').push({status:value?'enabled-dm':'disabled-dm',uid:me?.uid||'',username:me?.username||'',createdAt:Date.now()});
+}
+async function postBotDM(convo,text,botUid=NOVA_UID){
+  const bot=BOT_ACCOUNTS[botUid]||BOT_ACCOUNTS[NOVA_UID];
+  const createdAt=Date.now();
+  const botMsg={from:bot.uid,fromName:bot.name,fromUsername:bot.username,to:me.uid,text:String(text).slice(0,1200),createdAt,isBot:true,bot:true};
+  await db.ref('siteDMs/'+convo+'/messages').push(botMsg);
+  await Promise.all([
+    db.ref('siteDMIndex/'+me.uid+'/'+convo).set({conversation:convo,withUid:bot.uid,fromUid:bot.uid,fromName:bot.name,fromUsername:bot.username,lastText:botMsg.text,lastAt:createdAt}),
+    db.ref('siteDMIndex/'+bot.uid+'/'+convo).set({conversation:convo,withUid:me.uid,fromUid:me.uid,fromName:me.name||me.username,fromUsername:me.username,lastText:botMsg.text,lastAt:createdAt})
+  ]);
+}
+async function triggerNovaDM(userText,convo,botUid=activeWith){
+  if(novaDmBusy||!db||![NOVA_UID,ASTRO_UID].includes(botUid))return;
+  if(!(await novaEnabled()))return;
+  const bot=BOT_ACCOUNTS[botUid]||BOT_ACCOUNTS[NOVA_UID];
+  novaDmBusy=true;
+  try{
+    await db.ref('siteNovaLogs').push({status:bot.username+'-dm-triggered',details:String(userText).slice(0,500),uid:me.uid,username:me.username,createdAt:Date.now()});
+    const snap=await db.ref('siteDMs/'+convo+'/messages').limitToLast(12).get();
+    const lines=[];
+    snap.forEach(c=>{
+      const v=c.val()||{};
+      const speaker=(BOT_ACCOUNTS[v.from]?.name)||(v.fromName||v.fromUsername||'user');
+      lines.push(`${speaker}: ${v.text||''}`);
+    });
+    const system=`You are ${bot.name}, a real user in a school game website DM. You are not an assistant. Keep replies short and natural. Do not cuss. Do not say you are high, drunk, hungover, faded, intoxicated, stoned, or on drugs. Do not start with "${bot.name}:". Do not say you are checking, searching, generating, processing, working, or doing anything. Use a little casual Gen Z tone, but not too much. No markdown.`;
+    const prompt=`DM history:\n${lines.join('\n')}\n\nReply to ${me.name||me.displayName||me.username}. Answer only their latest DM.`;
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_API_KEY},body:JSON.stringify({model:'llama-3.1-8b-instant',messages:[{role:'system',content:system},{role:'user',content:prompt}],temperature:0.9,max_tokens:120})});
+    const data=await res.json();
+    if(!res.ok){await db.ref('siteNovaLogs').push({status:bot.username+'-dm-groq-error',details:JSON.stringify(data).slice(0,1200),uid:me.uid,createdAt:Date.now()});console.error(bot.username+' DM Groq error',data);return;}
+    const reply=cleanNovaReply(data?.choices?.[0]?.message?.content||'');
+    if(reply)await postBotDM(convo,reply,bot.uid);
+  }catch(e){
+    console.error('Bot DM error',e);
+    try{await db.ref('siteNovaLogs').push({status:bot.username+'-dm-error',details:e.message||String(e),uid:me.uid,createdAt:Date.now()})}catch(_){}
+  }finally{novaDmBusy=false}
+}
+
 async function sendDM() {
   if (sending) return;
   if (!activeWith) return FGAuth.showNotice('Pick a conversation first.');
   const text = dmInput.value.trim();
   if (!text) return;
+  if(text.toLowerCase()==='/disableai'){await setNovaAI(false);dmInput.value='';FGAuth.showNotice('Nova AI disabled.');return;}
+  if(text.toLowerCase()==='/enableai'){await setNovaAI(true);dmInput.value='';FGAuth.showNotice('Nova AI enabled.');return;}
   sending = true;
   dmInput.value = '';
   const convo = active || convoKey(me.uid, activeWith);
@@ -131,6 +198,7 @@ async function sendDM() {
       db.ref('siteDMIndex/' + activeWith + '/' + convo).set({ conversation: convo, withUid: me.uid, fromUid: me.uid, fromName: me.name || me.username, fromUsername: me.username, lastText: msg.text, lastAt: createdAt })
     ]);
     if (!activeListenerRef || active !== convo) startLiveMessages(convo);
+    const botTarget=activeWith;if([NOVA_UID,ASTRO_UID].includes(botTarget))setTimeout(()=>triggerNovaDM(msg.text,convo,botTarget),250);
   } catch (e) {
     console.error(e);
     FGAuth.showNotice('DM failed to send.');
@@ -151,13 +219,27 @@ document.addEventListener('click',e=>{
   openReportModal({type:'dm',targetUid:m.from||'',targetUsername:u.username||'',targetName:u.name||u.username||m.from||'',targetId:id,messageId:id,messageText:m.text||'',context:'private DM message'});
 });
 
+
+async function ensureNovaDMAccount(){
+  if(!db)return;
+  for(const bot of Object.values(BOT_ACCOUNTS)){
+    const snap=await db.ref('siteUsers/'+bot.uid).get().catch(()=>null);
+    const base={uid:bot.uid,username:bot.username,name:bot.name,displayName:bot.name,role:'bot',rank:'bot',bot:true,isBot:true,verified:true,provider:'bot-account',createdAt:Date.now(),lastSeen:Date.now(),photoURL:bot.photoURL,pfp:bot.photoURL};
+    if(!snap||!snap.exists()) await db.ref('siteUsers/'+bot.uid).set(base);
+    else await db.ref('siteUsers/'+bot.uid).update({...base,...(snap.val()||{}),uid:bot.uid,username:bot.username,role:'bot',rank:'bot',bot:true,isBot:true,verified:true});
+    await db.ref('siteUsernames/'+bot.username).set(bot.uid);
+  }
+}
+
 document.addEventListener('fg-auth-ready', async () => {
   me = window.FGUser;
   await FGAuth.initFirebase();
   db = FGAuth.db();
+  await ensureNovaDMAccount(); Object.assign(users,BOT_ACCOUNTS);
+  await db.ref('siteSettings/nova/enabled').get().then(s=>{if(!s.exists())return db.ref('siteSettings/nova/enabled').set(true)}).catch(()=>{});
 
   db.ref('siteUsers').on('value', s => {
-    users = s.val() || {};
+    users = s.val() || {}; Object.assign(users,BOT_ACCOUNTS);
     renderConvos();
     maybeOpenFromUrl();
     renderMessages();
@@ -228,4 +310,5 @@ dmForm.addEventListener('submit', e => {
   });
 })();
 </script>
+<script src="user-loading-fix.js"></script>
 </body></html>

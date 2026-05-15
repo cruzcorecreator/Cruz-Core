@@ -33,7 +33,8 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 let db=null, fs=null, users={}, presence={}, customCommands={}, chatSettings={}, chatMessagesCache={}, siteWordFilters={}, me=null, loaded=false; let lastChatSendAt=0; const NOVA_UID='bot-nova';
 
-const GROQ_API_KEY='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';
+const BOT_ACCOUNTS={nova:{uid:'bot-nova',username:'nova',name:'Nova',photoURL:'https://mir-s3-cdn-cf.behance.net/projects/404/aa9f81144900743.Y3JvcCwxMTkyLDkzMywxNCww.jpg'},astro:{uid:'bot-astro',username:'astro',name:'Astro',photoURL:'https://cdn-icons-png.flaticon.com/512/4712/4712109.png'}};
+const GROQ_API_KEY='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';
 let novaLastReply=0;
 let novaBusy=false;
 
@@ -54,6 +55,10 @@ RULES:
 - Do not label your message.
 - Do not say you are doing, checking, searching, looking up, generating, processing, working on, or handling anything.
 - Do not describe your own actions. Just respond naturally.
+- Do not cuss or use profanity.
+- Do not use swear words.
+- Do not say or imply you are high, drunk, hungover, faded, intoxicated, stoned, or on drugs.
+- Do not say you are doing, checking, searching, generating, processing, working, or handling anything.
 - Don't respond to every message.
 - Act human.
 - Respond like a Gen Z internet-native who lives online and communicates primarily through vibes, slang, and cultural shorthand.
@@ -257,6 +262,9 @@ async function runCommand(raw){
 
   try{
     if(['help','commands'].includes(cmd)){ $('commandsModal')?.classList.add('open'); return true; }
+    if(cmd==='disableai'){ await setNovaEnabled(false); await logStaff('disableai','nova','off'); staffNotice('Nova AI disabled.'); return true; }
+    if(cmd==='enableai'){ await setNovaEnabled(true); await logStaff('enableai','nova','on'); staffNotice('Nova AI enabled.'); return true; }
+    if(cmd==='aistatus'){ const on=await isNovaEnabled(); staffNotice('Nova AI is '+(on?'enabled':'disabled')+'.'); return true; }
     if(cmd==='ping'){ staffNotice('pong'); return true; }
     if(cmd==='uptime'){ staffNotice('Site online. Client loaded at '+new Date().toLocaleTimeString()); return true; }
     if(cmd==='serverinfo'){ staffNotice('Firebase web app · users: '+Object.keys(users||{}).length); return true; }
@@ -270,16 +278,26 @@ async function runCommand(raw){
     if(cmd==='blacklistword'){ if(!parts[0]){staffNotice('Usage: /blacklistword word');return true;} await db.ref('siteChatSettings/blacklist/'+norm(parts[0])).set(true); await logStaff(cmd,'chat',parts[0]||''); staffNotice('Word blacklisted.'); return true; }
     if(cmd==='unblacklistword'){ if(!parts[0]){staffNotice('Usage: /unblacklistword word');return true;} await db.ref('siteChatSettings/blacklist/'+norm(parts[0])).remove(); await logStaff(cmd,'chat',parts[0]||''); staffNotice('Word removed.'); return true; }
 
-    if(['clear','purge'].includes(cmd)){
-      const limit=Math.min(Number(cmd==='clear'?(parts[0]||20):(parts[1]||20)),120);
+    if(cmd==='clear'){
+      const snap=await db.ref(DB_ROOT+'/messages').get();
+      const updates={};
+      snap.forEach(c=>{ updates[c.key]=null; });
+      await db.ref(DB_ROOT+'/messages').update(updates);
+      await logStaff('clear','chat','all messages');
+      staffNotice('Cleared every chatbox message.');
+      return true;
+    }
+    if(cmd==='purge'){
+      const limit=Math.min(Number(parts[1]||20),500);
       const snap=await db.ref(DB_ROOT+'/messages').limitToLast(limit).get();
       const updates={};
       snap.forEach(c=>{
         const v=c.val()||{};
-        if(cmd==='clear' || (target && v.uid===target.uid)) updates[c.key]=null;
+        if(target && v.uid===target.uid) updates[c.key]=null;
       });
       await db.ref(DB_ROOT+'/messages').update(updates);
       await logStaff(cmd,target?.uid||'chat',String(limit));
+      staffNotice('Purged '+(target?.username||target?.name||'user')+' messages.');
       return true;
     }
 
@@ -367,6 +385,26 @@ function novaPromptFrom(text){
 function novaResponseText(data={}){
   return data.response || data.output || data.answer || data.text || data.reply || data.message || data.result || data.responseText || data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
+
+async function ensureChatBotAccount(botKey='nova'){
+  const bot=BOT_ACCOUNTS[botKey]||BOT_ACCOUNTS.nova;
+  try{
+    const ref=db.ref('siteUsers/'+bot.uid);
+    const s=await ref.get();
+    const base={uid:bot.uid,username:bot.username,name:bot.name,displayName:bot.name,role:'bot',rank:'bot',bot:true,isBot:true,verified:true,provider:'bot-account',photoURL:bot.photoURL,pfp:bot.photoURL,lastSeen:Date.now(),currentPage:'chatbox'};
+    if(s.exists())await ref.update({...base,...(s.val()||{}),uid:bot.uid,username:bot.username,role:'bot',rank:'bot',bot:true,isBot:true,verified:true});
+    else await ref.set({...base,createdAt:Date.now()});
+    await db.ref('siteUsernames/'+bot.username).set(bot.uid);
+    await db.ref('sitePresence/'+bot.uid).update({uid:bot.uid,name:bot.name,username:bot.username,role:'bot',online:true,currentPage:'chatbox',lastSeen:Date.now(),photoURL:bot.photoURL,pfp:bot.photoURL});
+  }catch(e){console.warn('bot account ensure failed',e)}
+}
+function detectMentionedBot(text=''){
+  const t=String(text).toLowerCase();
+  if(/(^|[^a-z0-9_])astro([^a-z0-9_]|$)/i.test(t))return 'astro';
+  if(/(^|[^a-z0-9_])nova([^a-z0-9_]|$)/i.test(t))return 'nova';
+  return '';
+}
+
 async function novaLog(status, details='', extra={}){
   try{
     if(!db)return;
@@ -380,6 +418,21 @@ async function novaLog(status, details='', extra={}){
     });
   }catch(e){console.warn('Nova log failed',e)}
 }
+
+async function isNovaEnabled(){
+  try{
+    if(!db)return true;
+    const s=await db.ref('siteSettings/nova/enabled').get();
+    if(!s.exists()){await db.ref('siteSettings/nova/enabled').set(true);return true;}
+    return s.val()!==false;
+  }catch(e){return true}
+}
+async function setNovaEnabled(value){
+  novaEnabled=!!value;
+  await db.ref('siteSettings/nova').update({enabled:!!value,updatedAt:Date.now(),updatedBy:me?.uid||''});
+  await novaLog(value?'enabled':'disabled','Nova AI '+(value?'enabled':'disabled'));
+}
+
 async function postNovaMessage(text, requestId=''){
   if(!text || !db)return;
   await db.ref(DB_ROOT+'/messages').push({
@@ -400,35 +453,58 @@ async function sendToNova(){ return; }
 
 
 
+
+async function postBotChatMessage(text,botKey='nova'){
+  const bot=BOT_ACCOUNTS[botKey]||BOT_ACCOUNTS.nova;
+  if(typeof ensureChatBotAccount==='function')await ensureChatBotAccount(botKey);
+  await db.ref(DB_ROOT + '/messages').push({
+    uid:bot.uid,
+    username:bot.username,
+    name:bot.name,
+    displayName:bot.name,
+    role:'bot',
+    rank:'bot',
+    customTag:'BOT',
+    isBot:true,
+    bot:true,
+    text:String(text).slice(0,1200),
+    createdAt:Date.now(),
+    photoURL:bot.photoURL,
+    pfp:bot.photoURL
+  });
+}
+
 async function maybeTriggerNova(messageText){
   if(!messageText || !db) return;
+  if(!(await isNovaEnabled())) return;
 
   const textMsg = String(messageText || '').trim();
   if(!textMsg || textMsg.length < 2) return;
   if(novaBusy) return;
 
-  const lower = textMsg.toLowerCase();
-  const askerName = (me?.name || me?.displayName || me?.username || 'user');
-  const mentioned = /(^|\s)@?nova([\s:,.!?]|$)/i.test(textMsg) || /(^|\s)@?bot([\s:,.!?]|$)/i.test(textMsg);
+  const botKey = detectMentionedBot(textMsg);
+  if(!botKey) return;
 
-  if(!mentioned) return;
+  const bot = BOT_ACCOUNTS[botKey] || BOT_ACCOUNTS.nova;
+  const askerName = (me?.name || me?.displayName || me?.username || 'user');
 
   novaBusy = true;
 
   try{
-    await novaLog('groq-triggered', textMsg.slice(0,500));
+    await novaLog(botKey + '-groq-triggered', textMsg.slice(0,500));
+    await ensureChatBotAccount(botKey);
 
     const snap = await db.ref(DB_ROOT + '/messages').limitToLast(10).once('value');
     const msgs = [];
 
     snap.forEach(child=>{
       const v = child.val() || {};
-      if(v.uid === NOVA_UID) return;
+      if(v.uid === bot.uid) return;
       msgs.push(`${v.name || v.displayName || v.username || 'user'}: ${v.text || ''}`);
     });
 
     const systemPrompt = `
-You are Nova, a real user in a school game website chatroom.
+You are ${bot.name}, a real user in a school game website chatroom.
 
 You are NOT an assistant.
 You are a casual user.
@@ -437,6 +513,10 @@ RULES:
 - Keep messages short.
 - Never use markdown.
 - Never say "As an AI".
+- Do not cuss or use profanity.
+- Do not use swear words.
+- Do not say or imply you are high, drunk, hungover, faded, intoxicated, stoned, or on drugs.
+- Do not say you are doing, checking, searching, generating, processing, working, or handling anything.
 - Don't respond to every message.
 - Act human.
 - Use casual conversational language, like texting in a group chat.
@@ -446,7 +526,7 @@ RULES:
 - Never sound corporate or formal.
 - Do not sound overly Gen Z or like a meme page.
 - Do not use em-dashes.
-- Your reply should be ONLY the message text, not "Nova:" first.
+- Your reply should be ONLY the message text, not "${bot.name}:" first.
 `;
 
     const userPrompt = `
@@ -479,10 +559,10 @@ Keep it short.
     });
 
     const data = await res.json();
-    await novaLog('groq-api-response', JSON.stringify(data).slice(0,1500));
+    await novaLog(botKey + '-groq-api-response', JSON.stringify(data).slice(0,1500));
 
     if(!res.ok){
-      await novaLog('groq-http-error', JSON.stringify(data).slice(0,1500));
+      await novaLog(botKey + '-groq-http-error', JSON.stringify(data).slice(0,1500));
       novaBusy = false;
       return;
     }
@@ -491,7 +571,7 @@ Keep it short.
 
     if(reply){
       reply = reply
-        .replace(/^\s*(nova|bot)\s*:\s*/i, '')
+        .replace(/^\s*(nova|astro|bot)\s*:\s*/i, '')
         .replace(/^\s*(i('|’)m|i am|im)\s+(checking|looking|searching|working|doing|generating|processing|handling)[^.!?]*[.!?]?\s*/i, '')
         .replace(/^\s*(let me|lemme)\s+(check|look|see|search)[^.!?]*[.!?]?\s*/i, '')
         .replace(/^\s*(one sec|hold on|give me a sec)[,.!\s]*/i, '')
@@ -513,38 +593,23 @@ Keep it short.
     }
 
     if(!reply){
-      await novaLog('groq-empty-reply', JSON.stringify(data).slice(0,1000));
+      await novaLog(botKey + '-groq-empty-reply', JSON.stringify(data).slice(0,1000));
       novaBusy = false;
       return;
     }
 
-    await db.ref(DB_ROOT + '/messages').push({
-      uid:NOVA_UID,
-      username:'nova',
-      name:'Nova',
-      displayName:'Nova',
-      role:'bot',
-      rank:'bot',
-      customTag:'BOT',
-      isBot:true,
-      bot:true,
-      text:reply.slice(0,1200),
-      createdAt:Date.now(),
-      photoURL:'https://mir-s3-cdn-cf.behance.net/projects/404/aa9f81144900743.Y3JvcCwxMTkyLDkzMywxNCww.jpg',
-      pfp:'https://mir-s3-cdn-cf.behance.net/projects/404/aa9f81144900743.Y3JvcCwxMTkyLDkzMywxNCww.jpg'
-    });
+    await postBotChatMessage(reply, botKey);
 
     novaLastReply = Date.now();
-    await novaLog('nova-posted', reply.slice(0,500));
+    await novaLog(botKey + '-posted', reply.slice(0,500));
 
   }catch(err){
-    console.error('nova groq error', err);
-    try{ await novaLog('groq-error', err?.message || String(err)); }catch(e){}
+    console.error(botKey + ' groq error', err);
+    try{ await novaLog(botKey + '-groq-error', err?.message || String(err)); }catch(e){}
   }finally{
     novaBusy = false;
   }
 }
-
 
 
 

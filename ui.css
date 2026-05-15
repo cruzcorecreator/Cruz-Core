@@ -603,3 +603,34 @@ input,textarea,select,button{font-size:16px}
   .admin-tabs,.admin-nav{gap:6px}
   .admin-tab{padding:9px 10px}
 }
+
+
+/* verified profile badge */
+.verified-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-left:7px;
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#38bdf8,#2563eb);
+  color:white;
+  font-size:.82rem;
+  font-weight:950;
+  box-shadow:0 0 0 2px rgba(255,255,255,.18),0 8px 22px rgba(37,99,235,.35);
+  vertical-align:middle;
+}
+.verified-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid rgba(56,189,248,.4);
+  background:rgba(56,189,248,.12);
+  color:#bfdbfe;
+  border-radius:999px;
+  padding:5px 9px;
+  font-weight:900;
+  font-size:.78rem;
+}
+.verified-pill::before{content:"✓";font-weight:950}

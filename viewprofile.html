@@ -13,6 +13,11 @@
 </div>
 
 <script src="login-guard.js"></script><script src="shell.js"></script><script>
+function formatAccountCreated(ts){
+  const n=Number(ts||0);
+  if(!n)return 'Unknown';
+  try{return new Date(n).toLocaleString()}catch(e){return 'Unknown'}
+}
 const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const id=new URLSearchParams(location.search).get('id');let db,me,u={};
 const rewardMilestones=[[1,'🎮','Level badge'],[5,'✅','Active Member'],[8,'🎨','Banner color'],[10,'🌈','Name color'],[12,'🖼️','Profile frame'],[15,'💬','Custom status'],[20,'📜','Bigger bio'],[25,'✨','Glow username'],[30,'💫','Animated border'],[35,'🏅','Veteran tag'],[40,'🟣','Rare theme'],[45,'🔦','Spotlight'],[50,'🌈','Rainbow name'],[60,'🎉','Particles'],[75,'👑','Legend tag'],[100,'🏆','Gold profile']];
@@ -43,7 +48,7 @@ function render(){
   profileHero.classList.toggle('profile-frame-gold',u.profileFrame==='gold'&&r.goldProfile);
   avatar.innerHTML=photo?`<img src="${esc(photo)}" loading="lazy" referrerpolicy="no-referrer">`:esc((u.name||u.username||'P').slice(0,1).toUpperCase());
   recentGames.innerHTML=(u.recentGames||[]).slice(0,10).map(g=>`<a class="person" href="${esc(g.url||('game.html?id='+g.id))}"><span class="avatar">🎮</span><span><b>${esc(g.title||g.id)}</b><span>${new Date(g.playedAt||Date.now()).toLocaleString()}</span></span></a>`).join('')||'<p class="muted">No recent games visible.</p>';
-  stats.innerHTML=`<div class="person"><span class="avatar">🟢</span><span><b>Status</b><span id="playingGameText">not playing anything</span></span></div><div class="person"><span class="avatar">@</span><span><b>${esc(u.username||'')}</b><span>username</span></span></div><div class="person"><span class="avatar">⭐</span><span><b>${esc(u.role||'member')}</b><span>rank</span></span></div><div class="person"><span class="avatar">⬆️</span><span><b>Lv ${lvl}</b><span>${Number(u.activeSeconds||0)} active seconds</span></span></div>`;
+  stats.innerHTML=`<div class="person"><span class="avatar">🟢</span><span><b>Status</b><span id="playingGameText">not playing anything</span></span></div><div class="person"><span class="avatar">@</span><span><b>${esc(u.username||'')}</b><span>username</span></span></div><div class="person"><span class="avatar">📅</span><span><b>${formatAccountCreated(u.createdAt)}</b><span>account created</span></span></div><div class="person"><span class="avatar">⭐</span><span><b>${esc(u.role||'member')}</b><span>rank</span></span></div><div class="person"><span class="avatar">⬆️</span><span><b>Lv ${lvl}</b><span>${Number(u.activeSeconds||0)} active seconds</span></span></div>`;
   rewardList.innerHTML=rewardMilestones.map(x=>`<div class="reward-node ${lvl>=x[0]?'unlocked':'locked'}"><div class="reward-icon">${x[1]}</div><div class="lvl">Lv ${x[0]}</div><div class="reward-name">${x[2]}</div></div>`).join('');
 }
 document.addEventListener('fg-auth-ready',async()=>{me=window.FGUser;await FGAuth.initFirebase();db=FGAuth.db();db.ref('siteUsers/'+id).on('value',s=>{u=s.val()||{};render()});db.ref('sitePresence/'+id).on('value',s=>setPlayingGame(s.val()||{}));});
